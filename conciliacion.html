@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recouromex · Conciliación Semanal</title>
+
+  <!-- Libreria de Supabase para el navegador (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --verde: #0F2818;
+      --dorado: #C9A961;
+      --crema: #FBF9F3;
+      --rojo-suave: #fdecec;
+      --rojo: #8a1c1c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #EDEAE2;
+      color: #2a2a2a;
+      padding-bottom: 90px;
+    }
+
+    /* ---------- Encabezado ---------- */
+    header {
+      background: var(--verde);
+      color: var(--crema);
+      padding: 18px 16px;
+      text-align: center;
+      border-bottom: 4px solid var(--dorado);
+    }
+    header .logo { font-family: Georgia, serif; font-size: 22px; font-weight: bold; letter-spacing: 2px; }
+    header .sub { font-size: 13px; letter-spacing: 1px; color: var(--dorado); margin-top: 2px; }
+
+    /* ---------- Barra superior (semana + cargar) ---------- */
+    .barra-top {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--crema);
+      border-bottom: 1px solid #ddd5c2;
+      padding: 12px 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .barra-top .fila { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
+    .barra-top .campo { flex: 1; min-width: 200px; }
+    .barra-top label { display: block; font-size: 12px; font-weight: bold; color: var(--verde); margin-bottom: 5px; }
+    .barra-top input {
+      width: 100%; padding: 11px 12px; font-size: 15px;
+      border: 2px solid #d8d2c2; border-radius: 8px; outline: none;
+    }
+    .barra-top input:focus { border-color: var(--dorado); }
+    #btnCargar {
+      padding: 11px 18px; font-size: 14px; font-weight: bold;
+      color: var(--dorado); background: var(--verde);
+      border: 2px solid var(--verde); border-radius: 8px; cursor: pointer; white-space: nowrap;
+    }
+    #btnCargar:hover:not(:disabled) { background: var(--dorado); color: var(--verde); }
+    .resumen { max-width: 1100px; margin: 10px auto 0; font-size: 13px; font-weight: bold; color: var(--verde); }
+    .resumen .rojo { color: var(--rojo); }
+
+    /* ---------- Tabla ---------- */
+    .tabla-wrap { max-width: 1100px; margin: 16px auto; padding: 0 16px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); min-width: 920px; }
+    thead th {
+      background: var(--verde); color: var(--crema);
+      font-family: Georgia, serif; font-weight: bold; font-size: 13px;
+      text-align: left; padding: 12px 10px; white-space: nowrap;
+    }
+    tbody td { padding: 10px; border-bottom: 1px solid #eee6d6; font-size: 14px; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr.incong { background: var(--rojo-suave); }
+
+    .prod .madre { display: block; font-family: Georgia, serif; font-weight: bold; color: var(--verde); }
+    .prod .pres { display: block; font-size: 12px; color: #8a8472; }
+    .fisico { font-weight: bold; white-space: nowrap; }
+
+    .erp-input { width: 100px; padding: 9px 8px; font-size: 14px; text-align: center; background: #FFF7CC; border: 2px solid #E6D98A; border-radius: 7px; outline: none; }
+    .erp-input:focus { border-color: var(--dorado); }
+    .dif { font-weight: bold; white-space: nowrap; text-align: center; }
+
+    .ok-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #e7f3ec; color: #14532d; }
+    .incong-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #f7d4d4; color: var(--rojo); }
+    .pendiente { font-size: 12px; color: #9a9486; font-style: italic; }
+
+    .accion-sel { min-width: 180px; padding: 9px 8px; font-size: 13px; border: 2px solid #d8d2c2; border-radius: 7px; outline: none; background: #fff; }
+    .accion-sel:focus { border-color: var(--dorado); }
+    .nota-input { width: 170px; padding: 9px 8px; font-size: 13px; border: 1px solid #d8d2c2; border-radius: 7px; outline: none; }
+    .nota-input:focus { border-color: var(--dorado); }
+
+    /* ---------- Barra inferior ---------- */
+    .barra-guardar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--crema); border-top: 1px solid #ddd5c2; padding: 12px 16px; box-shadow: 0 -2px 10px rgba(0,0,0,0.12); z-index: 10; }
+    .barra-guardar .interno { max-width: 1100px; margin: 0 auto; }
+    #btnGuardar { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; letter-spacing: 1px; color: var(--dorado); background: var(--verde); border: 2px solid var(--verde); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+    #btnGuardar:hover:not(:disabled) { background: var(--dorado); color: var(--verde); }
+    #btnGuardar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ---------- Mensajes ---------- */
+    .mensaje { max-width: 1100px; margin: 12px auto; padding: 13px 16px; border-radius: 10px; font-size: 14px; display: none; }
+    .mensaje.exito { display: block; background: #e7f3ec; color: #14532d; border: 1px solid #b6dcc3; }
+    .mensaje.error { display: block; background: #fdecec; color: #8a1c1c; border: 1px solid #f3c2c2; }
+    .mensaje.info  { display: block; background: #fbf6e6; color: #6b551d; border: 1px solid #ecdca5; }
+
+    /* ---------- Barra de sesion (cerrar sesion) ---------- */
+    header { position: relative; }
+    .btn-salir {
+      position: absolute; top: 12px; right: 12px;
+      font-size: 11px; font-weight: bold; letter-spacing: 0.5px;
+      color: var(--verde); background: var(--dorado);
+      border: 1px solid var(--dorado); border-radius: 16px;
+      padding: 6px 12px; cursor: pointer;
+    }
+    .btn-salir:hover { background: #d8bd7e; }
+    .sesion-quien { font-size: 11px; color: var(--dorado); letter-spacing: 0.5px; margin-top: 4px; min-height: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="btn-salir" id="btnSalir">Cerrar sesión</button>
+    <div class="logo">RECOUROMEX</div>
+    <div class="sub">Conciliación Semanal</div>
+    <div class="sesion-quien" id="quien"></div>
+  </header>
+
+  <div class="barra-top">
+    <div class="fila">
+      <div class="campo">
+        <label for="semana">Semana a conciliar</label>
+        <input id="semana" type="text" placeholder="Ej: SEM-2026-05-18" autocomplete="off" />
+      </div>
+      <button id="btnCargar">Cargar conciliación</button>
+    </div>
+    <div class="resumen" id="resumen"></div>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <div class="tabla-wrap" id="tablaWrap" style="display:none;">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Unidad</th>
+          <th>Físico (Fernando)</th>
+          <th>ERP</th>
+          <th>Dif %</th>
+          <th>Alerta</th>
+          <th>Acción</th>
+          <th>Nota</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="barra-guardar">
+    <div class="interno">
+      <button id="btnGuardar" disabled>Guardar conciliación</button>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  Credenciales de Supabase (mismas que conteo.html)
+    // ============================================================
+    const SUPABASE_URL = "https://vbzitecyimcalorywiwr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZieml0ZWN5aW1jYWxvcnl3aXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNDk4NjQsImV4cCI6MjA5NDgyNTg2NH0.qdZItXNc2Ck4kilUHWeTi_KHZ9Ptfui3mU_eV8k7ZaA";
+
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ---- Sesion: mostrar quien inicio sesion y cerrar sesion ----
+    (function () {
+      try {
+        const s = JSON.parse(localStorage.getItem("recouromex_sesion") || "null");
+        if (s && s.nombre) document.getElementById("quien").textContent = s.nombre + " · " + (s.rol || "");
+      } catch (e) {}
+      const bs = document.getElementById("btnSalir");
+      if (bs) bs.addEventListener("click", function () {
+        try { localStorage.removeItem("recouromex_sesion"); } catch (e) {}
+        window.location.href = "index.html";
+      });
+    })();
+
+    const UMBRAL = 5; // % de incongruencia
+    const ACCIONES = ["RECONTAR", "AJUSTAR_ERP", "AJUSTAR_KARDEX", "LIBERAR_NOTA", "IGNORAR"];
+
+    const inputSemana = document.getElementById("semana");
+    const btnCargar = document.getElementById("btnCargar");
+    const btnGuardar = document.getElementById("btnGuardar");
+    const mensaje = document.getElementById("mensaje");
+    const tablaWrap = document.getElementById("tablaWrap");
+    const tbody = document.getElementById("tbody");
+    const resumen = document.getElementById("resumen");
+
+    let grupos = [];     // un objeto por producto madre
+    let idSemana = "";
+
+    function msg(texto, tipo) {
+      mensaje.textContent = texto;
+      mensaje.className = "mensaje " + tipo;
+    }
+
+    function fmt(n) {
+      return Number(n).toLocaleString("es-MX", { maximumFractionDigits: 2 });
+    }
+    function unidadCorta(unidad) {
+      if (unidad === "KILOS") return "KG";
+      if (unidad === "PIEZAS") return "piezas";
+      return "LTS";
+    }
+    function redondear(n) { return Math.round(n * 1000) / 1000; }
+
+    // ---------- Calcular diferencia / alerta ----------
+    // Devuelve estado: PENDIENTE | OK | INCONG
+    function computeDif(fisico, erpStr) {
+      if (erpStr === "" || erpStr == null) return { estado: "PENDIENTE", erp: null, pct: null, alerta: null };
+      const erp = parseFloat(erpStr);
+      if (isNaN(erp)) return { estado: "PENDIENTE", erp: null, pct: null, alerta: null };
+      if (erp === 0) {
+        if (fisico === 0) return { estado: "OK", erp: 0, pct: 0, alerta: "OK" };
+        return { estado: "INCONG", erp: 0, pct: null, alerta: "INCONGRUENCIA" }; // no se puede dividir entre 0
+      }
+      const pct = ((fisico - erp) / erp) * 100;
+      const alerta = Math.abs(pct) > UMBRAL ? "INCONGRUENCIA" : "OK";
+      return { estado: alerta === "INCONGRUENCIA" ? "INCONG" : "OK", erp: erp, pct: pct, alerta: alerta };
+    }
+
+    // ---------- Cargar la conciliacion de una semana ----------
+    async function cargar() {
+      idSemana = inputSemana.value.trim();
+      if (!idSemana) {
+        msg("Escribe el id de la semana (ej: SEM-2026-05-18) y vuelve a cargar.", "error");
+        return;
+      }
+
+      btnCargar.disabled = true;
+      btnCargar.textContent = "Cargando…";
+
+      try {
+        const [resProd, resConteo, resConc] = await Promise.all([
+          db.from("productos").select("id, codigo_madre, codigo_hijo, nombre, unidad_conciliacion").order("id", { ascending: true }),
+          db.from("conteos").select("producto_id, piezas, equiv_lts, equiv_kg").eq("id_semana", idSemana),
+          db.from("conciliaciones").select("codigo_madre, erp, accion, nota").eq("id_semana", idSemana)
+        ]);
+
+        if (resProd.error) throw resProd.error;
+        if (resConteo.error) throw resConteo.error;
+        if (resConc.error) throw resConc.error;
+
+        const prods = resProd.data || [];
+        const conteos = resConteo.data || [];
+        const concPrevias = resConc.data || [];
+
+        if (prods.length === 0) {
+          tablaWrap.style.display = "none";
+          msg("No hay productos cargados. Revisa la tabla \"productos\" en Supabase.", "error");
+          return;
+        }
+
+        // Mapa de conteos por producto_id
+        const mapaConteo = {};
+        conteos.forEach(function (c) { mapaConteo[c.producto_id] = c; });
+
+        // Mapa de conciliaciones previas por codigo_madre (para precargar)
+        const mapaPrevias = {};
+        concPrevias.forEach(function (c) { mapaPrevias[c.codigo_madre] = c; });
+
+        // Agrupar productos por codigo_madre (preservando orden por id)
+        const orden = [];
+        const mapaGrupos = {};
+        prods.forEach(function (p) {
+          if (!mapaGrupos[p.codigo_madre]) {
+            mapaGrupos[p.codigo_madre] = {
+              codigo_madre: p.codigo_madre,
+              nombre: p.nombre,
+              ids: [],
+              unidadConcil: p.unidad_conciliacion
+            };
+            orden.push(p.codigo_madre);
+          }
+          const g = mapaGrupos[p.codigo_madre];
+          g.ids.push(p.id);
+        });
+
+        // Construir los grupos finales con unidad, fisico y representante
+        grupos = orden.map(function (m) {
+          const g = mapaGrupos[m];
+          // La unidad viene directo de productos (los barriles ya dicen KILOS)
+          g.unidad = g.unidadConcil;
+          g.producto_id = g.ids[0]; // id representativo (el menor, por venir ordenado)
+
+          let fisico = 0;
+          g.ids.forEach(function (pid) {
+            const c = mapaConteo[pid];
+            if (!c) return;
+            if (g.unidad === "LITROS") fisico += parseFloat(c.equiv_lts) || 0;
+            else if (g.unidad === "KILOS") fisico += parseFloat(c.equiv_kg) || 0;
+            else if (g.unidad === "PIEZAS") fisico += parseFloat(c.piezas) || 0;
+          });
+          g.fisico = redondear(fisico);
+          g.previa = mapaPrevias[m] || null;
+          return g;
+        });
+
+        render();
+        tablaWrap.style.display = "";
+        btnGuardar.disabled = false;
+
+        if (conteos.length === 0) {
+          msg("Aviso: no hay conteo de Fernando para la semana " + idSemana + ". Los físicos aparecen en 0. Aun así puedes capturar el ERP.", "info");
+        } else {
+          msg("Conciliación cargada para " + idSemana + " · " + grupos.length + " productos madre.", "exito");
+        }
+        actualizarResumen();
+      } catch (e) {
+        tablaWrap.style.display = "none";
+        msg("Error al cargar: " + e.message, "error");
+      } finally {
+        btnCargar.disabled = false;
+        btnCargar.textContent = "Cargar conciliación";
+      }
+    }
+
+    // ---------- Dibujar la tabla ----------
+    function render() {
+      tbody.innerHTML = "";
+      grupos.forEach(function (g) {
+        const m = g.codigo_madre;
+        const presTxt = g.nombre + (g.ids.length > 1 ? " (+" + (g.ids.length - 1) + " present.)" : "");
+
+        let opciones = '<option value="">(elegir acción)</option>';
+        ACCIONES.forEach(function (a) { opciones += '<option value="' + a + '">' + a + '</option>'; });
+
+        const tr = document.createElement("tr");
+        tr.id = "row-" + m;
+        tr.innerHTML =
+          '<td class="prod"><span class="madre">' + m + '</span><span class="pres">' + presTxt + '</span></td>' +
+          '<td>' + g.unidad + '</td>' +
+          '<td class="fisico">' + fmt(g.fisico) + ' ' + unidadCorta(g.unidad) + '</td>' +
+          '<td><input class="erp-input" id="erp-' + m + '" type="number" inputmode="decimal" step="any" min="0" placeholder="ERP" /></td>' +
+          '<td class="dif" id="dif-' + m + '">—</td>' +
+          '<td id="alerta-' + m + '"><span class="pendiente">pendiente</span></td>' +
+          '<td><div id="accion-wrap-' + m + '" style="display:none;"><select class="accion-sel" id="accion-' + m + '">' + opciones + '</select></div></td>' +
+          '<td><input class="nota-input" id="nota-' + m + '" type="text" placeholder="Nota / explicación" /></td>';
+        tbody.appendChild(tr);
+
+        // Precargar valores de una conciliacion previa, si existe
+        if (g.previa) {
+          if (g.previa.erp !== null && g.previa.erp !== undefined) document.getElementById("erp-" + m).value = g.previa.erp;
+          if (g.previa.nota) document.getElementById("nota-" + m).value = g.previa.nota;
+        }
+
+        // Listener del ERP -> recalcula en tiempo real
+        document.getElementById("erp-" + m).addEventListener("input", function () {
+          recalcRow(g);
+          actualizarResumen();
+        });
+
+        // Calcular estado inicial (por si venia precargado) y precargar accion
+        recalcRow(g);
+        if (g.previa && g.previa.accion) {
+          const sel = document.getElementById("accion-" + m);
+          if (sel) sel.value = g.previa.accion;
+        }
+      });
+    }
+
+    // ---------- Recalcular un renglon ----------
+    function recalcRow(g) {
+      const m = g.codigo_madre;
+      const erpStr = document.getElementById("erp-" + m).value.trim();
+      const difCell = document.getElementById("dif-" + m);
+      const alertaCell = document.getElementById("alerta-" + m);
+      const accionWrap = document.getElementById("accion-wrap-" + m);
+      const row = document.getElementById("row-" + m);
+
+      const d = computeDif(g.fisico, erpStr);
+
+      if (d.estado === "PENDIENTE") {
+        difCell.textContent = "—";
+        alertaCell.innerHTML = '<span class="pendiente">pendiente</span>';
+        row.classList.remove("incong");
+        accionWrap.style.display = "none";
+        return;
+      }
+
+      difCell.textContent = (d.pct === null) ? "n/d" : (fmt(d.pct) + " %");
+
+      if (d.alerta === "INCONGRUENCIA") {
+        alertaCell.innerHTML = '<span class="incong-badge">INCONGRUENCIA</span>';
+        row.classList.add("incong");
+        accionWrap.style.display = "";
+      } else {
+        alertaCell.innerHTML = '<span class="ok-badge">OK</span>';
+        row.classList.remove("incong");
+        accionWrap.style.display = "none";
+      }
+    }
+
+    // ---------- Resumen arriba ----------
+    function actualizarResumen() {
+      let incong = 0, conciliados = 0;
+      grupos.forEach(function (g) {
+        const d = computeDif(g.fisico, document.getElementById("erp-" + g.codigo_madre).value.trim());
+        if (d.estado !== "PENDIENTE") conciliados++;
+        if (d.alerta === "INCONGRUENCIA") incong++;
+      });
+      resumen.innerHTML = "Renglones: " + grupos.length + " · Conciliados: " + conciliados +
+        " · <span class='rojo'>Incongruencias: " + incong + "</span>";
+    }
+
+    // ---------- Guardar conciliacion ----------
+    async function guardar() {
+      if (grupos.length === 0) { msg("Primero carga una semana.", "error"); return; }
+
+      const registros = grupos.map(function (g) {
+        const m = g.codigo_madre;
+        const erpStr = document.getElementById("erp-" + m).value.trim();
+        const d = computeDif(g.fisico, erpStr);
+        const accionSel = document.getElementById("accion-" + m);
+        const nota = document.getElementById("nota-" + m).value.trim();
+
+        // La accion solo aplica si hay incongruencia
+        const accion = (d.alerta === "INCONGRUENCIA" && accionSel && accionSel.value) ? accionSel.value : null;
+
+        return {
+          id_semana: idSemana,
+          producto_id: g.producto_id,
+          codigo_madre: m,
+          unidad: g.unidad,
+          fisico: g.fisico,
+          erp: d.erp,
+          diferencia_pct: (d.pct === null) ? null : redondear(d.pct),
+          alerta: d.alerta,            // null si esta pendiente
+          accion: accion,
+          nota: nota || null,
+          conciliado_por: "Alma"
+        };
+      });
+
+      btnGuardar.disabled = true;
+      btnGuardar.textContent = "Guardando…";
+
+      try {
+        // ¿Que madres ya estaban conciliadas para esta semana?
+        const { data: existentes, error: errEx } = await db
+          .from("conciliaciones")
+          .select("codigo_madre")
+          .eq("id_semana", idSemana);
+        if (errEx) throw errEx;
+
+        const yaExisten = new Set((existentes || []).map(function (r) { return r.codigo_madre; }));
+
+        const nuevos = [];
+        for (const reg of registros) {
+          if (yaExisten.has(reg.codigo_madre)) {
+            const { error } = await db
+              .from("conciliaciones")
+              .update(reg)
+              .eq("id_semana", idSemana)
+              .eq("codigo_madre", reg.codigo_madre);
+            if (error) throw error;
+          } else {
+            nuevos.push(reg);
+          }
+        }
+        if (nuevos.length > 0) {
+          const { error } = await db.from("conciliaciones").insert(nuevos);
+          if (error) throw error;
+        }
+
+        msg("✓ Conciliación guardada: " + registros.length + " renglones para la semana " + idSemana + ".", "exito");
+      } catch (e) {
+        msg("Error al guardar: " + e.message, "error");
+      } finally {
+        btnGuardar.disabled = false;
+        btnGuardar.textContent = "Guardar conciliación";
+      }
+    }
+
+    btnCargar.addEventListener("click", cargar);
+    btnGuardar.addEventListener("click", guardar);
+    inputSemana.addEventListener("keydown", function (e) { if (e.key === "Enter") cargar(); });
+  </script>
+</body>
+</html>

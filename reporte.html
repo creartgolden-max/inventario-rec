@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recouromex · Reporte Ejecutivo de Inventario</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --verde: #0F2818;
+      --dorado: #C9A961;
+      --crema: #FBF9F3;
+      --ok: #1c7a45;
+      --ok-suave: #ecf6f0;
+      --naranja: #b8730f;
+      --naranja-suave: #fdf3e3;
+      --rojo: #8a1c1c;
+      --rojo-suave: #fdecec;
+      --gris: #8a8472;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #EDEAE2; color: #2a2a2a; padding-bottom: 30px; }
+
+    header { background: var(--verde); color: var(--crema); padding: 18px 16px; text-align: center; border-bottom: 4px solid var(--dorado); }
+    header .logo { font-family: Georgia, serif; font-size: 22px; font-weight: bold; letter-spacing: 2px; }
+    header .sub { font-size: 13px; letter-spacing: 1px; color: var(--dorado); margin-top: 2px; }
+
+    .barra-top { position: sticky; top: 0; z-index: 10; background: var(--crema); border-bottom: 1px solid #ddd5c2; padding: 12px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .barra-top .fila { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
+    .barra-top label { display: block; font-size: 12px; font-weight: bold; color: var(--verde); margin-bottom: 5px; }
+    .barra-top select { padding: 10px 12px; font-size: 14px; border: 2px solid #d8d2c2; border-radius: 8px; outline: none; background: #fff; min-width: 220px; }
+    .barra-top select:focus { border-color: var(--dorado); }
+
+    .cont { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    h2.sec { font-family: Georgia, serif; color: var(--verde); font-size: 18px; margin: 22px 0 12px; }
+
+    /* Tarjetas de resumen */
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat { flex: 1; min-width: 130px; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 4px solid var(--dorado); }
+    .stat .n { font-family: Georgia, serif; font-size: 30px; font-weight: bold; }
+    .stat .l { font-size: 12px; color: var(--gris); margin-top: 2px; }
+    .stat.total .n { color: var(--verde); }
+    .stat.verde { border-top-color: var(--ok); } .stat.verde .n { color: var(--ok); }
+    .stat.naranja { border-top-color: var(--naranja); } .stat.naranja .n { color: var(--naranja); }
+    .stat.rojo { border-top-color: var(--rojo); } .stat.rojo .n { color: var(--rojo); }
+
+    /* Tablas */
+    .tabla-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); min-width: 640px; }
+    thead th { background: var(--verde); color: var(--crema); font-family: Georgia, serif; font-size: 13px; text-align: left; padding: 12px 10px; white-space: nowrap; }
+    tbody td { padding: 10px; border-bottom: 1px solid #eee6d6; font-size: 14px; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr.verde   { background: var(--ok-suave); }
+    tbody tr.naranja { background: var(--naranja-suave); }
+    tbody tr.rojo    { background: var(--rojo-suave); }
+    .madre { font-family: Georgia, serif; font-weight: bold; color: var(--verde); }
+    .pres { font-size: 12px; color: var(--gris); }
+    .num { font-weight: bold; white-space: nowrap; }
+
+    .sem { display: inline-block; padding: 4px 11px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+    .sem.verde   { background: #e2f0e8; color: var(--ok); }
+    .sem.naranja { background: #f8e9d2; color: var(--naranja); }
+    .sem.rojo    { background: #f7d4d4; color: var(--rojo); }
+    .sem.gris    { background: #ece9e0; color: var(--gris); }
+
+    .mensaje { max-width: 1100px; margin: 12px auto; padding: 13px 16px; border-radius: 10px; font-size: 14px; display: none; }
+    .mensaje.error { display: block; background: #fdecec; color: #8a1c1c; border: 1px solid #f3c2c2; }
+    .mensaje.info  { display: block; background: #fbf6e6; color: #6b551d; border: 1px solid #ecdca5; }
+    .pie-nota { max-width: 1100px; margin: 8px auto 0; padding: 0 16px; font-size: 12px; color: var(--gris); }
+
+    /* ---------- Barra de sesion (cerrar sesion) ---------- */
+    header { position: relative; }
+    .btn-salir {
+      position: absolute; top: 12px; right: 12px;
+      font-size: 11px; font-weight: bold; letter-spacing: 0.5px;
+      color: var(--verde); background: var(--dorado);
+      border: 1px solid var(--dorado); border-radius: 16px;
+      padding: 6px 12px; cursor: pointer;
+    }
+    .btn-salir:hover { background: #d8bd7e; }
+    .sesion-quien { font-size: 11px; color: var(--dorado); letter-spacing: 0.5px; margin-top: 4px; min-height: 13px; }
+
+    /* ---------- Boton Descargar PDF ---------- */
+    .btn-pdf {
+      padding: 10px 16px; font-size: 14px; font-weight: bold;
+      color: var(--verde); background: var(--dorado);
+      border: 2px solid var(--dorado); border-radius: 8px; cursor: pointer; white-space: nowrap;
+    }
+    .btn-pdf:hover { background: #d8bd7e; }
+
+    /* ---------- Solo visible al imprimir / guardar PDF ---------- */
+    .solo-print { display: none; }
+
+    @media print {
+      body { background: #fff !important; padding: 0; }
+      .barra-top, .btn-salir, .btn-pdf, .pie-nota { display: none !important; }
+      .solo-print { display: block; font-size: 12px; color: #555; margin: 6px 0 16px; }
+      header, .stat, thead th, .sem { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .stat, table { box-shadow: none; }
+      table { min-width: 0; }
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; }
+      h2.sec { page-break-after: avoid; }
+      @page { margin: 12mm; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="btn-salir" id="btnSalir">Cerrar sesión</button>
+    <div class="logo">RECOUROMEX</div>
+    <div class="sub">Reporte Ejecutivo de Inventario</div>
+    <div class="sesion-quien" id="quien"></div>
+  </header>
+
+  <div class="barra-top">
+    <div class="fila">
+      <div>
+        <label for="semanaSel">Reporte considerando cierres hasta:</label>
+        <select id="semanaSel"><option>cargando…</option></select>
+      </div>
+      <button id="btnPdf" class="btn-pdf">Descargar PDF</button>
+    </div>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <div class="cont" id="cont" style="display:none;">
+    <div class="solo-print" id="printInfo"></div>
+    <div class="stats" id="stats"></div>
+
+    <h2 class="sec">Stock actual por producto</h2>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Stock actual</th><th>Unidad</th><th>Mínimo</th><th>Estado</th></tr></thead>
+        <tbody id="tbodyStock"></tbody>
+      </table>
+    </div>
+
+    <h2 class="sec">Consumo y proyección</h2>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Consumo prom. / semana</th><th>Semanas de cobertura</th><th>Lectura</th></tr></thead>
+        <tbody id="tbodyConsumo"></tbody>
+      </table>
+    </div>
+    <div class="pie-nota">El consumo se calcula con la diferencia de saldos entre cierres consecutivos. Requiere al menos 2 semanas cerradas.</div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://vbzitecyimcalorywiwr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZieml0ZWN5aW1jYWxvcnl3aXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNDk4NjQsImV4cCI6MjA5NDgyNTg2NH0.qdZItXNc2Ck4kilUHWeTi_KHZ9Ptfui3mU_eV8k7ZaA";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ---- Sesion: mostrar quien inicio sesion y cerrar sesion ----
+    (function () {
+      try {
+        const s = JSON.parse(localStorage.getItem("recouromex_sesion") || "null");
+        if (s && s.nombre) document.getElementById("quien").textContent = s.nombre + " · " + (s.rol || "");
+      } catch (e) {}
+      const bs = document.getElementById("btnSalir");
+      if (bs) bs.addEventListener("click", function () {
+        try { localStorage.removeItem("recouromex_sesion"); } catch (e) {}
+        window.location.href = "index.html";
+      });
+    })();
+
+    const COB_BAJA = 4;   // < 4 semanas -> pedir pronto
+    const COB_ALTA = 12;  // > 12 semanas -> cobertura amplia
+
+    const semanaSel = document.getElementById("semanaSel");
+    const mensaje = document.getElementById("mensaje");
+    const cont = document.getElementById("cont");
+    const statsBox = document.getElementById("stats");
+    const tbodyStock = document.getElementById("tbodyStock");
+    const tbodyConsumo = document.getElementById("tbodyConsumo");
+
+    let madres = [];              // [{codigo_madre, nombre, unidad, minimo}]
+    let invMap = {};              // codigo_madre -> {stock, unidad}
+    let cierresPorMadre = {};     // codigo_madre -> [{id_semana, saldo}] ordenado asc
+    let semanas = [];             // lista de id_semana (asc)
+
+    function msg(t, tipo) { mensaje.textContent = t; mensaje.className = "mensaje " + tipo; }
+    function fmt(n) { return Number(n).toLocaleString("es-MX", { maximumFractionDigits: 2 }); }
+    function unidadCorta(u) { if (u === "KILOS") return "KG"; if (u === "PIEZAS") return "piezas"; return "LTS"; }
+
+    function estadoStock(stock, minimo) {
+      if (stock === null || stock === undefined) return { clave: "gris", txt: "sin dato" };
+      if (stock === 0) return { clave: "rojo", txt: "SIN STOCK" };
+      if (stock <= minimo) return { clave: "naranja", txt: "BAJO MÍNIMO" };
+      return { clave: "verde", txt: "OK" };
+    }
+
+    // ---------- Carga inicial ----------
+    async function init() {
+      try {
+        const [resProd, resInv, resCie] = await Promise.all([
+          db.from("productos").select("id, codigo_madre, nombre, unidad_conciliacion, minimo_lts").order("id", { ascending: true }),
+          db.from("inventario").select("codigo_madre, stock_actual, unidad"),
+          db.from("cierres").select("id_semana, codigo_madre, saldo")
+        ]);
+        if (resProd.error) throw resProd.error;
+        if (resInv.error) throw resInv.error;
+        if (resCie.error) throw resCie.error;
+
+        // Madres (orden por id) con minimo = SUMA de las presentaciones
+        const orden = [], mapaM = {};
+        (resProd.data || []).forEach(function (p) {
+          if (!mapaM[p.codigo_madre]) {
+            mapaM[p.codigo_madre] = { codigo_madre: p.codigo_madre, nombre: p.nombre, unidad: p.unidad_conciliacion, minimo: 0 };
+            orden.push(p.codigo_madre);
+          }
+          mapaM[p.codigo_madre].minimo += (parseFloat(p.minimo_lts) || 0);
+        });
+        madres = orden.map(function (m) { return mapaM[m]; });
+
+        // Inventario por madre
+        invMap = {};
+        (resInv.data || []).forEach(function (r) {
+          invMap[r.codigo_madre] = { stock: parseFloat(r.stock_actual), unidad: r.unidad };
+        });
+
+        // Cierres por madre (ordenados por semana asc) + lista de semanas
+        cierresPorMadre = {};
+        const setSem = {};
+        (resCie.data || []).forEach(function (r) {
+          if (!cierresPorMadre[r.codigo_madre]) cierresPorMadre[r.codigo_madre] = [];
+          cierresPorMadre[r.codigo_madre].push({ id_semana: r.id_semana, saldo: parseFloat(r.saldo) });
+          setSem[r.id_semana] = true;
+        });
+        Object.keys(cierresPorMadre).forEach(function (m) {
+          cierresPorMadre[m].sort(function (a, b) { return a.id_semana < b.id_semana ? -1 : 1; });
+        });
+        semanas = Object.keys(setSem).sort();
+
+        // Selector de semanas (por defecto, la ultima)
+        if (semanas.length === 0) {
+          semanaSel.innerHTML = '<option value="">(sin cierres)</option>';
+        } else {
+          semanaSel.innerHTML = semanas.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join("");
+          semanaSel.value = semanas[semanas.length - 1];
+        }
+
+        cont.style.display = "";
+        render();
+      } catch (e) {
+        msg("Error al cargar el reporte: " + e.message, "error");
+      }
+    }
+
+    // ---------- Consumo / cobertura ----------
+    function calcularConsumo(codigoMadre, hastaSemana, stock) {
+      const todos = cierresPorMadre[codigoMadre] || [];
+      const lista = todos.filter(function (c) { return c.id_semana <= hastaSemana; });
+
+      if (lista.length < 2) return { estado: "sindato" };
+
+      // Promedio de (saldo anterior - saldo actual) entre cierres consecutivos
+      let suma = 0, n = 0;
+      for (let i = 1; i < lista.length; i++) { suma += (lista[i - 1].saldo - lista[i].saldo); n++; }
+      const consumoProm = suma / n;
+
+      if (consumoProm <= 0) {
+        // No baja (estable o repuesto) -> cobertura efectivamente amplia
+        return { estado: "amplia", consumoProm: consumoProm, cobertura: null };
+      }
+
+      const cobertura = (stock === null || stock === undefined) ? null : (stock / consumoProm);
+      return { estado: "ok", consumoProm: consumoProm, cobertura: cobertura };
+    }
+
+    function lecturaCobertura(cob) {
+      if (cob < COB_BAJA) return { clave: "rojo", txt: "Pedir pronto" };
+      if (cob <= COB_ALTA) return { clave: "naranja", txt: "Monitorear" };
+      return { clave: "verde", txt: "Cobertura amplia" };
+    }
+
+    // ---------- Dibujar ----------
+    function render() {
+      const hasta = semanaSel.value || (semanas.length ? semanas[semanas.length - 1] : "");
+      const piInfo = document.getElementById("printInfo");
+      if (piInfo) piInfo.textContent = "Cierres considerados hasta: " + (hasta || "—") + "  ·  Generado: " + new Date().toLocaleString("es-MX");
+      let cVerde = 0, cNaranja = 0, cRojo = 0, conDato = 0;
+
+      tbodyStock.innerHTML = "";
+      tbodyConsumo.innerHTML = "";
+
+      madres.forEach(function (m) {
+        const inv = invMap[m.codigo_madre];
+        const stock = inv ? inv.stock : null;
+        const unidad = inv ? inv.unidad : m.unidad;
+        const uc = unidadCorta(unidad);
+
+        // --- Fila de stock ---
+        const est = estadoStock(stock, m.minimo);
+        if (est.clave === "verde") cVerde++;
+        else if (est.clave === "naranja") cNaranja++;
+        else if (est.clave === "rojo") cRojo++;
+        if (stock !== null && stock !== undefined) conDato++;
+
+        const trS = document.createElement("tr");
+        trS.className = est.clave;
+        trS.innerHTML =
+          '<td><span class="madre">' + m.codigo_madre + '</span><br><span class="pres">' + m.nombre + '</span></td>' +
+          '<td class="num">' + (stock === null ? "—" : fmt(stock) + " " + uc) + '</td>' +
+          '<td>' + unidad + '</td>' +
+          '<td class="num">' + fmt(m.minimo) + " " + uc + '</td>' +
+          '<td><span class="sem ' + est.clave + '">' + est.txt + '</span></td>';
+        tbodyStock.appendChild(trS);
+
+        // --- Fila de consumo ---
+        const c = calcularConsumo(m.codigo_madre, hasta, stock);
+        let consumoTxt, coberturaTxt, lect;
+        if (c.estado === "sindato") {
+          consumoTxt = "—"; coberturaTxt = "—"; lect = { clave: "gris", txt: "Sin dato de consumo" };
+        } else if (c.estado === "amplia") {
+          consumoTxt = "≈ 0 " + uc + "/sem"; coberturaTxt = "—"; lect = { clave: "verde", txt: "Cobertura amplia" };
+        } else {
+          consumoTxt = fmt(c.consumoProm) + " " + uc + "/sem";
+          coberturaTxt = (c.cobertura === null) ? "—" : fmt(c.cobertura) + " sem";
+          lect = (c.cobertura === null) ? { clave: "gris", txt: "Sin dato de consumo" } : lecturaCobertura(c.cobertura);
+        }
+
+        const trC = document.createElement("tr");
+        trC.innerHTML =
+          '<td><span class="madre">' + m.codigo_madre + '</span></td>' +
+          '<td class="num">' + consumoTxt + '</td>' +
+          '<td class="num">' + coberturaTxt + '</td>' +
+          '<td><span class="sem ' + lect.clave + '">' + lect.txt + '</span></td>';
+        tbodyConsumo.appendChild(trC);
+      });
+
+      // --- Tarjetas de resumen ---
+      statsBox.innerHTML =
+        '<div class="stat total"><div class="n">' + madres.length + '</div><div class="l">Productos (madre)</div></div>' +
+        '<div class="stat verde"><div class="n">' + cVerde + '</div><div class="l">OK (verde)</div></div>' +
+        '<div class="stat naranja"><div class="n">' + cNaranja + '</div><div class="l">Bajo mínimo (naranja)</div></div>' +
+        '<div class="stat rojo"><div class="n">' + cRojo + '</div><div class="l">Sin stock (rojo)</div></div>';
+    }
+
+    semanaSel.addEventListener("change", render);
+    document.getElementById("btnPdf").addEventListener("click", function () { window.print(); });
+    init();
+  </script>
+</body>
+</html>

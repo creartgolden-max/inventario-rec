@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recouromex · Acceso al Sistema</title>
+
+  <!-- Libreria de Supabase para el navegador (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --verde: #0F2818;     /* Color primario - verde forest */
+      --dorado: #C9A961;    /* Color acento - dorado */
+      --crema: #FBF9F3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #2a2a2a;
+      background: radial-gradient(circle at 50% 0%, #1c4a2c 0%, var(--verde) 55%, #08160d 100%);
+    }
+
+    .card {
+      background: var(--crema);
+      width: 100%;
+      max-width: 400px;
+      border-radius: 16px;
+      padding: 44px 38px 38px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      border-top: 5px solid var(--dorado);
+      text-align: center;
+    }
+
+    .logo {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      color: var(--verde);
+    }
+
+    .divider {
+      width: 56px;
+      height: 3px;
+      background: var(--dorado);
+      margin: 14px auto;
+      border-radius: 2px;
+    }
+
+    .subtitle {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dorado);
+      font-weight: bold;
+    }
+
+    .titulo-acceso {
+      font-family: Georgia, serif;
+      font-size: 18px;
+      color: var(--verde);
+      margin: 34px 0 22px;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--verde);
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-family: Arial, sans-serif;
+      letter-spacing: 1px;
+      text-align: center;
+      text-transform: uppercase;
+      border: 2px solid #d8d2c2;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: var(--dorado); }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      letter-spacing: 1px;
+      color: var(--dorado);
+      background: var(--verde);
+      border: 2px solid var(--verde);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--dorado);
+      color: var(--verde);
+      border-color: var(--dorado);
+    }
+
+    button:disabled { opacity: 0.6; cursor: wait; }
+
+    .mensaje {
+      margin-top: 22px;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .mensaje.exito {
+      display: block;
+      background: #e7f3ec;
+      color: #14532d;
+      border: 1px solid #b6dcc3;
+    }
+
+    .mensaje.error {
+      display: block;
+      background: #fdecec;
+      color: #8a1c1c;
+      border: 1px solid #f3c2c2;
+    }
+
+    .pie {
+      margin-top: 28px;
+      font-size: 11px;
+      color: #9a9486;
+      letter-spacing: 1px;
+    }
+
+    /* ---------- Acceso por rol (botones de entrada / menu admin) ---------- */
+    #acceso { display: none; }
+    #acceso.show { display: block; }
+    .menu-titulo {
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--verde);
+      margin-top: 18px;
+      text-align: left;
+    }
+    .btn-acceso {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      letter-spacing: 1px;
+      text-decoration: none;
+      color: var(--dorado);
+      background: var(--verde);
+      border: 2px solid var(--verde);
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+    .btn-acceso:hover { background: var(--dorado); color: var(--verde); border-color: var(--dorado); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">RECOUROMEX</div>
+    <div class="divider"></div>
+    <div class="subtitle">Almacén Importados</div>
+
+    <h1 class="titulo-acceso">Acceso al Sistema</h1>
+
+    <label for="codigo">Código de acceso</label>
+    <input id="codigo" type="text" placeholder="Ej: FERN-2026" autocomplete="off" autofocus />
+
+    <button id="btnIngresar">Ingresar</button>
+
+    <div id="mensaje" class="mensaje"></div>
+
+    <div id="acceso"></div>
+
+    <div class="pie">Sistema de Inventario · Recouromex</div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  Credenciales de Supabase
+    //  (la anon key es segura para el frontend; protegida por RLS)
+    //  OJO: supabase-js usa la URL BASE, sin "/rest/v1/" al final.
+    // ============================================================
+    const SUPABASE_URL = "https://vbzitecyimcalorywiwr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZieml0ZWN5aW1jYWxvcnl3aXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNDk4NjQsImV4cCI6MjA5NDgyNTg2NH0.qdZItXNc2Ck4kilUHWeTi_KHZ9Ptfui3mU_eV8k7ZaA";
+
+    // Crear el cliente de Supabase
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const inputCodigo = document.getElementById("codigo");
+    const btn = document.getElementById("btnIngresar");
+    const mensaje = document.getElementById("mensaje");
+
+    function mostrar(texto, tipo) {
+      mensaje.textContent = texto;
+      mensaje.className = "mensaje " + tipo; // "exito" o "error"
+    }
+
+    // A donde va cada rol despues de iniciar sesion
+    const RUTAS = {
+      OPERATIVO:      "conteo.html",        // Fernando
+      ADMINISTRACION: "conciliacion.html",  // Alma
+      DIRECCION:      "direccion.html",     // Rodrigo (director)
+      FINANZAS:       "reporte.html"        // solo lectura del reporte
+      // ADMIN -> menu con todas las pantallas (abajo)
+    };
+
+    // Menu para el rol ADMIN: acceso a todas las pantallas
+    const MENU_ADMIN = [
+      { txt: "Conteo físico (Fernando)",        url: "conteo.html" },
+      { txt: "Conciliación (Alma)",             url: "conciliacion.html" },
+      { txt: "Aprobación de cierre (Director)", url: "direccion.html" },
+      { txt: "Reporte ejecutivo",               url: "reporte.html" }
+    ];
+
+    // Oculta el formulario de login una vez que el usuario entro
+    function ocultarFormulario() {
+      const lbl = document.querySelector('label[for="codigo"]');
+      if (lbl) lbl.style.display = "none";
+      inputCodigo.style.display = "none";
+      btn.style.display = "none";
+    }
+
+    // Muestra el boton "Entrar" (o el menu del admin) segun el rol
+    function mostrarAcceso(rol) {
+      const acceso = document.getElementById("acceso");
+      if (rol === "ADMIN") {
+        let html = '<div class="menu-titulo">Elige una pantalla:</div>';
+        MENU_ADMIN.forEach(function (m) {
+          html += '<a class="btn-acceso" href="' + m.url + '">' + m.txt + ' →</a>';
+        });
+        acceso.innerHTML = html;
+      } else if (RUTAS[rol]) {
+        acceso.innerHTML = '<a class="btn-acceso" href="' + RUTAS[rol] + '">Entrar →</a>';
+      } else {
+        // Rol sin pantalla asignada: no redirigir, avisar
+        acceso.innerHTML = '<div class="menu-titulo">Tu rol (' + rol +
+          ') no tiene una pantalla asignada. Avisa al administrador.</div>';
+      }
+      acceso.classList.add("show");
+    }
+
+    async function ingresar() {
+      const codigo = inputCodigo.value.trim().toUpperCase();
+
+      if (!codigo) {
+        mostrar("Escribe tu código de acceso.", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Verificando...";
+
+      try {
+        // Buscar el código en la tabla "usuarios"
+        const { data, error } = await db
+          .from("usuarios")
+          .select("nombre, rol, activo")
+          .eq("codigo", codigo)
+          .maybeSingle();
+
+        if (error) {
+          // Error tecnico (p.ej. la tabla "usuarios" aun no existe)
+          mostrar(
+            "No se pudo consultar la tabla de usuarios. " +
+            "¿Ya creaste la tabla \"usuarios\" en Supabase? Detalle: " + error.message,
+            "error"
+          );
+          return;
+        }
+
+        // No existe el código, o existe pero NO está activo -> mismo error
+        if (!data || data.activo !== true) {
+          mostrar("Código inválido o usuario inactivo", "error");
+          return;
+        }
+
+        // Código válido y activo
+        mostrar("Bienvenido " + data.nombre + " - Rol: " + data.rol, "exito");
+        // Guardar sesion en el navegador para mostrar "quien esta" en las otras pantallas
+        try { localStorage.setItem("recouromex_sesion", JSON.stringify({ nombre: data.nombre, rol: data.rol })); } catch (e) {}
+        ocultarFormulario();
+        mostrarAcceso(data.rol);
+
+      } catch (e) {
+        mostrar("Error de conexión: " + e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Ingresar";
+      }
+    }
+
+    // Eventos: clic en el botón y tecla Enter en el campo
+    btn.addEventListener("click", ingresar);
+    inputCodigo.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") ingresar();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recouromex · Conteo Físico Semanal</title>
+
+  <!-- Libreria de Supabase para el navegador (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --verde: #0F2818;
+      --dorado: #C9A961;
+      --crema: #FBF9F3;
+      --amarillo: #FFF7CC;   /* resaltado del campo de captura */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #EDEAE2;
+      color: #2a2a2a;
+      padding-bottom: 90px; /* espacio para la barra de guardar */
+    }
+
+    /* ---------- Encabezado ---------- */
+    header {
+      background: var(--verde);
+      color: var(--crema);
+      padding: 18px 16px;
+      text-align: center;
+      border-bottom: 4px solid var(--dorado);
+    }
+    header .logo {
+      font-family: Georgia, serif;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    header .sub {
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: var(--dorado);
+      margin-top: 2px;
+    }
+
+    /* ---------- Barra superior (semana + progreso) ---------- */
+    .barra-top {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--crema);
+      border-bottom: 1px solid #ddd5c2;
+      padding: 12px 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .barra-top label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--verde);
+      margin-bottom: 5px;
+    }
+    .barra-top input {
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 15px;
+      border: 2px solid #d8d2c2;
+      border-radius: 8px;
+      outline: none;
+    }
+    .barra-top input:focus { border-color: var(--dorado); }
+
+    .progreso-texto {
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--verde);
+    }
+    .progreso-fondo {
+      margin-top: 5px;
+      height: 10px;
+      background: #e2dccb;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .progreso-relleno {
+      height: 100%;
+      width: 0%;
+      background: var(--dorado);
+      transition: width 0.25s;
+    }
+
+    /* ---------- Contenedor de tarjetas ---------- */
+    .lista {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card-prod {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-left: 4px solid var(--verde);
+    }
+    .card-prod.contado { border-left-color: var(--dorado); }
+    .card-prod.barril { border-left-color: #7a5b1e; }
+
+    .prod-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .codigo {
+      font-family: Georgia, serif;
+      font-weight: bold;
+      font-size: 16px;
+      color: var(--verde);
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      background: var(--verde);
+      color: var(--dorado);
+      white-space: nowrap;
+    }
+    .badge.barril { background: #7a5b1e; color: #fff; }
+    .nombre { font-size: 14px; margin-top: 3px; color: #3a3a3a; }
+    .minimo { font-size: 12px; color: #8a8472; margin-top: 4px; }
+
+    .campo-label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--verde);
+      margin: 12px 0 5px;
+    }
+    .piezas {
+      width: 100%;
+      padding: 13px 12px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      background: var(--amarillo);
+      border: 2px solid #E6D98A;
+      border-radius: 8px;
+      outline: none;
+    }
+    .piezas:focus { border-color: var(--dorado); }
+
+    .equiv {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--verde);
+      background: #eef3ef;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .obs {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid #d8d2c2;
+      border-radius: 8px;
+      outline: none;
+    }
+    .obs:focus { border-color: var(--dorado); }
+
+    /* ---------- Especifico de barriles ---------- */
+    .nota-calc { font-size: 11px; color: #8a8472; margin-top: 6px; }
+    .barril-seccion {
+      margin-top: 14px;
+      padding: 12px;
+      background: #f6f3ea;
+      border: 1px dashed #d8cfb0;
+      border-radius: 10px;
+    }
+    .barril-titulo { font-size: 12px; font-weight: bold; color: var(--verde); margin-bottom: 8px; }
+    .abierto-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .peso-abierto {
+      flex: 1;
+      padding: 11px 12px;
+      font-size: 15px;
+      text-align: center;
+      background: var(--amarillo);
+      border: 2px solid #E6D98A;
+      border-radius: 8px;
+      outline: none;
+    }
+    .peso-abierto:focus { border-color: var(--dorado); }
+    .btn-quitar {
+      width: 44px;
+      border: 1px solid #e0b4b4;
+      background: #fbeaea;
+      color: #8a1c1c;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-agregar {
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--verde);
+      background: #fff;
+      border: 2px dashed var(--dorado);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-agregar:hover { background: var(--amarillo); }
+    .total-barril {
+      background: var(--verde);
+      color: var(--dorado);
+      font-size: 16px;
+      margin-top: 12px;
+    }
+
+    /* ---------- Barra inferior: guardar ---------- */
+    .barra-guardar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--crema);
+      border-top: 1px solid #ddd5c2;
+      padding: 12px 16px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.12);
+      z-index: 10;
+    }
+    .barra-guardar .interno { max-width: 700px; margin: 0 auto; }
+    #btnGuardar {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      letter-spacing: 1px;
+      color: var(--dorado);
+      background: var(--verde);
+      border: 2px solid var(--verde);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #btnGuardar:hover:not(:disabled) { background: var(--dorado); color: var(--verde); }
+    #btnGuardar:disabled { opacity: 0.6; cursor: wait; }
+
+    /* ---------- Mensajes ---------- */
+    .mensaje {
+      max-width: 700px;
+      margin: 0 auto 12px;
+      padding: 13px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+    }
+    .mensaje.exito { display: block; background: #e7f3ec; color: #14532d; border: 1px solid #b6dcc3; }
+    .mensaje.error { display: block; background: #fdecec; color: #8a1c1c; border: 1px solid #f3c2c2; }
+    .mensaje.info  { display: block; background: #fbf6e6; color: #6b551d; border: 1px solid #ecdca5; }
+
+    /* ---------- Barra de sesion (cerrar sesion) ---------- */
+    header { position: relative; }
+    .btn-salir {
+      position: absolute; top: 12px; right: 12px;
+      font-size: 11px; font-weight: bold; letter-spacing: 0.5px;
+      color: var(--verde); background: var(--dorado);
+      border: 1px solid var(--dorado); border-radius: 16px;
+      padding: 6px 12px; cursor: pointer;
+    }
+    .btn-salir:hover { background: #d8bd7e; }
+    .sesion-quien { font-size: 11px; color: var(--dorado); letter-spacing: 0.5px; margin-top: 4px; min-height: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="btn-salir" id="btnSalir">Cerrar sesión</button>
+    <div class="logo">RECOUROMEX</div>
+    <div class="sub">Conteo Físico Semanal</div>
+    <div class="sesion-quien" id="quien"></div>
+  </header>
+
+  <div class="barra-top">
+    <label for="semana">Semana del conteo</label>
+    <input id="semana" type="text" placeholder="Ej: SEM-2026-05-18" autocomplete="off" />
+    <div class="progreso-texto" id="progresoTexto">0 de 0 productos contados</div>
+    <div class="progreso-fondo"><div class="progreso-relleno" id="progresoRelleno"></div></div>
+  </div>
+
+  <div id="mensaje" class="mensaje" style="margin-top:12px;"></div>
+
+  <div class="lista" id="lista">
+    <div class="mensaje info" style="display:block;">Cargando productos…</div>
+  </div>
+
+  <div class="barra-guardar">
+    <div class="interno">
+      <button id="btnGuardar" disabled>Guardar conteo</button>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  Credenciales de Supabase (mismas que index.html)
+    //  supabase-js usa la URL BASE, sin "/rest/v1/" al final.
+    // ============================================================
+    const SUPABASE_URL = "https://vbzitecyimcalorywiwr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZieml0ZWN5aW1jYWxvcnl3aXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNDk4NjQsImV4cCI6MjA5NDgyNTg2NH0.qdZItXNc2Ck4kilUHWeTi_KHZ9Ptfui3mU_eV8k7ZaA";
+
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ---- Sesion: mostrar quien inicio sesion y cerrar sesion ----
+    (function () {
+      try {
+        const s = JSON.parse(localStorage.getItem("recouromex_sesion") || "null");
+        if (s && s.nombre) document.getElementById("quien").textContent = s.nombre + " · " + (s.rol || "");
+      } catch (e) {}
+      const bs = document.getElementById("btnSalir");
+      if (bs) bs.addEventListener("click", function () {
+        try { localStorage.removeItem("recouromex_sesion"); } catch (e) {}
+        window.location.href = "index.html";
+      });
+    })();
+
+    const lista = document.getElementById("lista");
+    const mensaje = document.getElementById("mensaje");
+    const btnGuardar = document.getElementById("btnGuardar");
+    const inputSemana = document.getElementById("semana");
+    const progresoTexto = document.getElementById("progresoTexto");
+    const progresoRelleno = document.getElementById("progresoRelleno");
+
+    const LITROS_POR_BARRIL = 120; // un barril cerrado = 120 L
+
+    let productos = [];
+
+    function msg(texto, tipo) {
+      mensaje.textContent = texto;
+      mensaje.className = "mensaje " + tipo;
+      mensaje.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    // Formatea numeros con hasta 2 decimales (estilo Mexico)
+    function fmt(n) {
+      return Number(n).toLocaleString("es-MX", { maximumFractionDigits: 2 });
+    }
+
+    // Etiqueta corta segun la unidad de conciliacion
+    function unidadCorta(unidad) {
+      if (unidad === "KILOS") return "KG";
+      if (unidad === "PIEZAS") return "piezas";
+      return "LTS"; // LITROS (y por defecto)
+    }
+
+    // Redondea a 3 decimales para guardar (evita ruido de punto flotante)
+    function redondear(n) {
+      return Math.round(n * 1000) / 1000;
+    }
+
+    // Tipo de tarjeta. La tarjeta especial de barril se activa con
+    // es_barril=true para CUALQUIER producto (sin codigos fijos): hoy
+    // aplica a RW34, RW35, RS14 y tambien a MELT-NEU-120L.
+    function tipoProducto(prod) {
+      if (prod.es_barril === true) return "BARRIL";
+      if (prod.unidad_conciliacion === "KILOS") return "KILOS";
+      if (prod.unidad_conciliacion === "PIEZAS") return "PIEZAS";
+      return "LITROS";
+    }
+
+    // ---------- Cargar productos ----------
+    async function cargarProductos() {
+      try {
+        const { data, error } = await db
+          .from("productos")
+          .select("id, codigo_hijo, nombre, unidad_conciliacion, es_barril, lts_por_pieza, densidad, minimo_lts")
+          .order("id", { ascending: true });
+
+        if (error) {
+          lista.innerHTML = "";
+          msg("No se pudieron leer los productos. Detalle: " + error.message, "error");
+          return;
+        }
+
+        productos = data || [];
+
+        if (productos.length === 0) {
+          lista.innerHTML = "";
+          msg("No se recibió ningún producto. Dos causas posibles: (1) la tabla \"productos\" está vacía, o (2) la seguridad RLS de Supabase está bloqueando la lectura pública de \"productos\". Si en el SQL Editor sí ves filas, es lo segundo: agrega una política de lectura para el rol anon.", "info");
+          return;
+        }
+
+        render();
+        actualizarProgreso();
+        btnGuardar.disabled = false;
+      } catch (e) {
+        lista.innerHTML = "";
+        msg("Error de conexión: " + e.message, "error");
+      }
+    }
+
+    // ---------- Dibujar las tarjetas ----------
+    function render() {
+      lista.innerHTML = "";
+      productos.forEach(function (prod) {
+        if (tipoProducto(prod) === "BARRIL") {
+          lista.appendChild(crearTarjetaBarril(prod));
+        } else {
+          lista.appendChild(crearTarjetaSimple(prod));
+        }
+      });
+    }
+
+    // ----- Tarjeta normal (LITROS / PIEZAS / KILOS no-barril) -----
+    function crearTarjetaSimple(prod) {
+      const unidad = prod.unidad_conciliacion;
+      const card = document.createElement("div");
+      card.className = "card-prod";
+      card.id = "card-" + prod.id;
+      card.innerHTML =
+        '<div class="prod-top">' +
+          '<span class="codigo">' + prod.codigo_hijo + '</span>' +
+          '<span class="badge">' + unidad + '</span>' +
+        '</div>' +
+        '<div class="nombre">' + prod.nombre + '</div>' +
+        '<div class="minimo">Mínimo de referencia: ' + (prod.minimo_lts ?? "—") +
+          ' ' + unidadCorta(unidad) + '</div>' +
+        '<label class="campo-label" for="piezas-' + prod.id + '">Piezas contadas</label>' +
+        '<input class="piezas" id="piezas-' + prod.id + '" type="number" inputmode="decimal" step="any" min="0" placeholder="0" />' +
+        '<div class="equiv" id="equiv-' + prod.id + '">Equivalente: 0 ' + unidadCorta(unidad) + '</div>' +
+        '<label class="campo-label" for="obs-' + prod.id + '">Observaciones (opcional)</label>' +
+        '<input class="obs" id="obs-' + prod.id + '" type="text" placeholder="Ej: caja abierta, saldo parcial…" />';
+
+      const inp = card.querySelector(".piezas");
+      inp.addEventListener("input", function () {
+        actualizarEquivalente(prod);
+        actualizarProgreso();
+      });
+      return card;
+    }
+
+    // ----- Tarjeta especial de BARRIL -----
+    function crearTarjetaBarril(prod) {
+      const densidad = parseFloat(prod.densidad) || 0;
+      const card = document.createElement("div");
+      card.className = "card-prod barril";
+      card.id = "card-" + prod.id;
+      card.innerHTML =
+        '<div class="prod-top">' +
+          '<span class="codigo">' + prod.codigo_hijo + '</span>' +
+          '<span class="badge barril">BARRIL · KG</span>' +
+        '</div>' +
+        '<div class="nombre">' + prod.nombre + '</div>' +
+        '<div class="minimo">Mínimo de referencia: ' + (prod.minimo_lts ?? "—") + '</div>' +
+
+        '<label class="campo-label" for="cerrados-' + prod.id + '">Barriles cerrados (completos)</label>' +
+        '<input class="piezas" id="cerrados-' + prod.id + '" type="number" inputmode="decimal" step="any" min="0" placeholder="0" />' +
+        '<div class="nota-calc">Cada barril cerrado = ' + LITROS_POR_BARRIL + ' L × ' + densidad + ' (densidad) = ' + fmt(LITROS_POR_BARRIL * densidad) + ' kg</div>' +
+
+        '<div class="barril-seccion">' +
+          '<div class="barril-titulo">Barriles abiertos (pesar cada uno, en kg)</div>' +
+          '<div id="abiertos-' + prod.id + '"></div>' +
+          '<button type="button" class="btn-agregar" id="btnAdd-' + prod.id + '">+ Agregar otro barril abierto</button>' +
+        '</div>' +
+
+        '<div class="equiv total-barril" id="total-' + prod.id + '">TOTAL: 0 kg</div>' +
+
+        '<label class="campo-label" for="obs-' + prod.id + '">Observaciones (opcional)</label>' +
+        '<input class="obs" id="obs-' + prod.id + '" type="text" placeholder="Ej: barril liberado con nota…" />';
+
+      // Recalcular cuando cambian los barriles cerrados
+      card.querySelector("#cerrados-" + prod.id).addEventListener("input", function () {
+        actualizarTotalBarril(prod);
+        actualizarProgreso();
+      });
+
+      // Boton para agregar mas barriles abiertos (con foco en el nuevo campo)
+      card.querySelector("#btnAdd-" + prod.id).addEventListener("click", function () {
+        agregarBarrilAbierto(prod, true);
+      });
+
+      // Empieza con un campo de barril abierto (sin robar el foco al cargar).
+      // querySelector funciona sobre el nodo aunque aun no este en el documento.
+      card.querySelector("#abiertos-" + prod.id).appendChild(crearFilaAbierto(prod));
+
+      return card;
+    }
+
+    // Crea una fila (input de peso + boton de quitar) para un barril abierto
+    function crearFilaAbierto(prod) {
+      const row = document.createElement("div");
+      row.className = "abierto-row";
+
+      const inp = document.createElement("input");
+      inp.type = "number";
+      inp.inputMode = "decimal";
+      inp.step = "any";
+      inp.min = "0";
+      inp.className = "peso-abierto";
+      inp.placeholder = "kg de este barril";
+      inp.addEventListener("input", function () {
+        actualizarTotalBarril(prod);
+        actualizarProgreso();
+      });
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "btn-quitar";
+      del.textContent = "✕";
+      del.addEventListener("click", function () {
+        row.remove();
+        actualizarTotalBarril(prod);
+        actualizarProgreso();
+      });
+
+      row.appendChild(inp);
+      row.appendChild(del);
+      return row;
+    }
+
+    // Agrega un campo de barril abierto (la tarjeta ya esta en el documento)
+    function agregarBarrilAbierto(prod, enfocar) {
+      const cont = document.getElementById("abiertos-" + prod.id);
+      if (!cont) return;
+      const row = crearFilaAbierto(prod);
+      cont.appendChild(row);
+      if (enfocar) row.querySelector("input").focus();
+    }
+
+    // ---------- Calculo del equivalente (tarjetas simples) ----------
+    function calcularEquivalente(prod, piezas) {
+      const ltsPorPieza = parseFloat(prod.lts_por_pieza) || 0;
+      if (prod.unidad_conciliacion === "KILOS") {
+        const densidad = parseFloat(prod.densidad) || 0;
+        return { tipo: "KG", valor: piezas * ltsPorPieza * densidad };
+      }
+      if (prod.unidad_conciliacion === "PIEZAS") {
+        return { tipo: "piezas", valor: piezas }; // sin conversion
+      }
+      return { tipo: "LTS", valor: piezas * ltsPorPieza }; // LITROS
+    }
+
+    function actualizarEquivalente(prod) {
+      const inp = document.getElementById("piezas-" + prod.id);
+      const equivDiv = document.getElementById("equiv-" + prod.id);
+      const card = document.getElementById("card-" + prod.id);
+      const piezas = parseFloat(inp.value);
+
+      if (inp.value.trim() === "" || isNaN(piezas)) {
+        equivDiv.textContent = "Equivalente: 0 " + unidadCorta(prod.unidad_conciliacion);
+        card.classList.remove("contado");
+        return;
+      }
+
+      const r = calcularEquivalente(prod, piezas);
+      equivDiv.textContent = "Equivalente: " + fmt(r.valor) + " " + r.tipo;
+      card.classList.add("contado");
+    }
+
+    // ---------- Calculo del total de un barril ----------
+    function leerPesosAbiertos(prod) {
+      const cont = document.getElementById("abiertos-" + prod.id);
+      const pesos = [];
+      if (cont) {
+        cont.querySelectorAll("input.peso-abierto").forEach(function (i) {
+          const v = parseFloat(i.value);
+          if (!isNaN(v)) pesos.push(v);
+        });
+      }
+      return pesos;
+    }
+
+    function actualizarTotalBarril(prod) {
+      const cerradosInp = document.getElementById("cerrados-" + prod.id);
+      const totalDiv = document.getElementById("total-" + prod.id);
+      const card = document.getElementById("card-" + prod.id);
+      const densidad = parseFloat(prod.densidad) || 0;
+
+      const cerrados = parseFloat(cerradosInp.value) || 0;
+      const kgCerrados = cerrados * LITROS_POR_BARRIL * densidad;
+      const pesos = leerPesosAbiertos(prod);
+      const sumaAbiertos = pesos.reduce(function (a, b) { return a + b; }, 0);
+      const total = kgCerrados + sumaAbiertos;
+
+      totalDiv.textContent = "TOTAL: " + fmt(total) + " kg";
+
+      if (estaContado(prod)) card.classList.add("contado");
+      else card.classList.remove("contado");
+    }
+
+    // ---------- ¿La tarjeta tiene captura? ----------
+    function estaContado(prod) {
+      if (tipoProducto(prod) === "BARRIL") {
+        const cerradosInp = document.getElementById("cerrados-" + prod.id);
+        if (cerradosInp && cerradosInp.value.trim() !== "") return true;
+        const cont = document.getElementById("abiertos-" + prod.id);
+        if (cont) {
+          let alguno = false;
+          cont.querySelectorAll("input.peso-abierto").forEach(function (i) {
+            if (i.value.trim() !== "") alguno = true;
+          });
+          if (alguno) return true;
+        }
+        return false;
+      }
+      const inp = document.getElementById("piezas-" + prod.id);
+      return !!(inp && inp.value.trim() !== "" && !isNaN(parseFloat(inp.value)));
+    }
+
+    // ---------- Barra de progreso ----------
+    function actualizarProgreso() {
+      let contados = 0;
+      productos.forEach(function (prod) { if (estaContado(prod)) contados++; });
+      const total = productos.length;
+      progresoTexto.textContent = contados + " de " + total + " productos contados";
+      progresoRelleno.style.width = total ? (contados / total * 100) + "%" : "0%";
+    }
+
+    // ---------- Guardar conteo ----------
+    async function guardar() {
+      const idSemana = inputSemana.value.trim();
+      if (!idSemana) {
+        msg("Escribe el id de la semana (ej: SEM-2026-05-18) antes de guardar.", "error");
+        return;
+      }
+
+      const capturados = [];
+      productos.forEach(function (prod) {
+        if (!estaContado(prod)) return;
+
+        const tipo = tipoProducto(prod);
+        const ltsPorPieza = parseFloat(prod.lts_por_pieza) || 0;
+        const densidad = parseFloat(prod.densidad) || 0;
+        const obs = document.getElementById("obs-" + prod.id).value.trim();
+
+        // Valores por defecto (todos los registros llevan las mismas columnas)
+        let piezas = null, equiv_lts = null, equiv_kg = null;
+        let barriles_cerrados = null, peso_abiertos = null, detalle_abiertos = null;
+
+        if (tipo === "BARRIL") {
+          const cerrados = parseFloat(document.getElementById("cerrados-" + prod.id).value) || 0;
+          const pesos = leerPesosAbiertos(prod);
+          const sumaAbiertos = pesos.reduce(function (a, b) { return a + b; }, 0);
+          const kgCerrados = cerrados * LITROS_POR_BARRIL * densidad;
+
+          barriles_cerrados = cerrados;
+          peso_abiertos = redondear(sumaAbiertos);
+          detalle_abiertos = pesos.length ? pesos.join(", ") : null;
+          equiv_kg = redondear(kgCerrados + sumaAbiertos); // total en kg
+        } else {
+          const p = parseFloat(document.getElementById("piezas-" + prod.id).value);
+          if (isNaN(p)) return;
+          piezas = p;
+          if (tipo === "KILOS") {
+            equiv_kg = redondear(p * ltsPorPieza * densidad);
+          } else if (tipo === "PIEZAS") {
+            // ambos equivalentes quedan vacios; el dato real va en "piezas"
+          } else { // LITROS
+            equiv_lts = redondear(p * ltsPorPieza);
+          }
+        }
+
+        capturados.push({
+          id_semana: idSemana,
+          producto_id: prod.id,
+          codigo_hijo: prod.codigo_hijo,
+          piezas: piezas,
+          equiv_lts: equiv_lts,
+          equiv_kg: equiv_kg,
+          barriles_cerrados: barriles_cerrados,
+          peso_abiertos: peso_abiertos,
+          detalle_abiertos: detalle_abiertos,
+          observaciones: obs || null,
+          capturado_por: "Fernando"
+        });
+      });
+
+      if (capturados.length === 0) {
+        msg("No has capturado ningún producto todavía.", "error");
+        return;
+      }
+
+      btnGuardar.disabled = true;
+      btnGuardar.textContent = "Guardando…";
+
+      try {
+        // 1) Ver que productos ya estaban guardados para esta semana
+        const { data: existentes, error: errEx } = await db
+          .from("conteos")
+          .select("producto_id")
+          .eq("id_semana", idSemana);
+        if (errEx) throw errEx;
+
+        const yaGuardados = new Set((existentes || []).map(function (r) { return r.producto_id; }));
+
+        // 2) Actualizar los existentes, juntar los nuevos
+        const nuevos = [];
+        for (const reg of capturados) {
+          if (yaGuardados.has(reg.producto_id)) {
+            const { error } = await db
+              .from("conteos")
+              .update(reg)
+              .eq("id_semana", idSemana)
+              .eq("producto_id", reg.producto_id);
+            if (error) throw error;
+          } else {
+            nuevos.push(reg);
+          }
+        }
+
+        // 3) Insertar los nuevos de un golpe
+        if (nuevos.length > 0) {
+          const { error } = await db.from("conteos").insert(nuevos);
+          if (error) throw error;
+        }
+
+        msg("✓ Conteo guardado: " + capturados.length + " producto(s) para la semana " + idSemana + ".", "exito");
+      } catch (e) {
+        msg("Error al guardar: " + e.message, "error");
+      } finally {
+        btnGuardar.disabled = false;
+        btnGuardar.textContent = "Guardar conteo";
+      }
+    }
+
+    btnGuardar.addEventListener("click", guardar);
+
+    // Arranque
+    cargarProductos();
+  </script>
+</body>
+</html>
