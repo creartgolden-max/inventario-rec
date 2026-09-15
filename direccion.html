@@ -89,11 +89,22 @@
     }
     .btn-salir:hover { background: #d8bd7e; }
     .sesion-quien { font-size: 11px; color: var(--dorado); letter-spacing: 0.5px; margin-top: 4px; min-height: 13px; }
+
+    /* ---------- Boton Reporte ejecutivo (solo panel Direccion) ---------- */
+    .btn-reporte {
+      position: absolute; top: 12px; left: 12px;
+      font-size: 11px; font-weight: bold; letter-spacing: 0.5px; text-decoration: none;
+      color: var(--dorado); background: transparent;
+      border: 1px solid var(--dorado); border-radius: 16px;
+      padding: 6px 12px;
+    }
+    .btn-reporte:hover { background: var(--dorado); color: var(--verde); }
   </style>
 </head>
 <body>
   <header>
     <button class="btn-salir" id="btnSalir">Cerrar sesión</button>
+    <a class="btn-reporte" href="reporte.html">📊 Reporte ejecutivo</a>
     <div class="logo">RECOUROMEX</div>
     <div class="sub">Aprobación de Cierre</div>
     <div class="sesion-quien" id="quien"></div>

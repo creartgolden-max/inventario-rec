@@ -23,41 +23,59 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; background: #EDEAE2; color: #2a2a2a; padding-bottom: 30px; }
 
-    header { background: var(--verde); color: var(--crema); padding: 18px 16px; text-align: center; border-bottom: 4px solid var(--dorado); }
+    header { position: relative; background: var(--verde); color: var(--crema); padding: 18px 16px; text-align: center; border-bottom: 4px solid var(--dorado); }
     header .logo { font-family: Georgia, serif; font-size: 22px; font-weight: bold; letter-spacing: 2px; }
     header .sub { font-size: 13px; letter-spacing: 1px; color: var(--dorado); margin-top: 2px; }
+    .sesion-quien { font-size: 11px; color: var(--dorado); letter-spacing: 0.5px; margin-top: 4px; min-height: 13px; }
+    .btn-salir, .btn-volver {
+      position: absolute; top: 12px;
+      font-size: 11px; font-weight: bold; letter-spacing: 0.5px; text-decoration: none;
+      border: 1px solid var(--dorado); border-radius: 16px; padding: 6px 12px; cursor: pointer;
+    }
+    .btn-salir { right: 12px; color: var(--verde); background: var(--dorado); }
+    .btn-salir:hover { background: #d8bd7e; }
+    .btn-volver { left: 12px; color: var(--dorado); background: transparent; }
+    .btn-volver:hover { background: var(--dorado); color: var(--verde); }
 
     .barra-top { position: sticky; top: 0; z-index: 10; background: var(--crema); border-bottom: 1px solid #ddd5c2; padding: 12px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-    .barra-top .fila { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
+    .barra-top .fila { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; max-width: 1150px; margin: 0 auto; }
     .barra-top label { display: block; font-size: 12px; font-weight: bold; color: var(--verde); margin-bottom: 5px; }
-    .barra-top select { padding: 10px 12px; font-size: 14px; border: 2px solid #d8d2c2; border-radius: 8px; outline: none; background: #fff; min-width: 220px; }
-    .barra-top select:focus { border-color: var(--dorado); }
+    .barra-top select, .barra-top input { padding: 10px 12px; font-size: 14px; border: 2px solid #d8d2c2; border-radius: 8px; outline: none; background: #fff; }
+    .barra-top input { width: 90px; }
+    .barra-top select:focus, .barra-top input:focus { border-color: var(--dorado); }
+    .btn-pdf { padding: 10px 16px; font-size: 14px; font-weight: bold; color: var(--verde); background: var(--dorado); border: 2px solid var(--dorado); border-radius: 8px; cursor: pointer; white-space: nowrap; margin-left: auto; }
+    .btn-pdf:hover { background: #d8bd7e; }
 
-    .cont { max-width: 1100px; margin: 0 auto; padding: 16px; }
-    h2.sec { font-family: Georgia, serif; color: var(--verde); font-size: 18px; margin: 22px 0 12px; }
+    .cont { max-width: 1150px; margin: 0 auto; padding: 16px; }
+    h2.sec { font-family: Georgia, serif; color: var(--verde); font-size: 18px; margin: 24px 0 6px; }
+    .sec-nota { font-size: 12px; color: var(--gris); margin-bottom: 10px; }
 
-    /* Tarjetas de resumen */
+    .aviso { padding: 12px 16px; border-radius: 10px; font-size: 13px; line-height: 1.45; margin-bottom: 14px; }
+    .aviso.info { background: #fbf6e6; color: #6b551d; border: 1px solid #ecdca5; }
+    .aviso.alto { background: var(--rojo-suave); color: var(--rojo); border: 1px solid #f3c2c2; }
+
     .stats { display: flex; gap: 12px; flex-wrap: wrap; }
-    .stat { flex: 1; min-width: 130px; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 4px solid var(--dorado); }
-    .stat .n { font-family: Georgia, serif; font-size: 30px; font-weight: bold; }
+    .stat { flex: 1; min-width: 130px; background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 4px solid var(--dorado); }
+    .stat .n { font-family: Georgia, serif; font-size: 30px; font-weight: bold; color: var(--verde); }
     .stat .l { font-size: 12px; color: var(--gris); margin-top: 2px; }
-    .stat.total .n { color: var(--verde); }
     .stat.verde { border-top-color: var(--ok); } .stat.verde .n { color: var(--ok); }
     .stat.naranja { border-top-color: var(--naranja); } .stat.naranja .n { color: var(--naranja); }
     .stat.rojo { border-top-color: var(--rojo); } .stat.rojo .n { color: var(--rojo); }
 
-    /* Tablas */
     .tabla-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); min-width: 640px; }
-    thead th { background: var(--verde); color: var(--crema); font-family: Georgia, serif; font-size: 13px; text-align: left; padding: 12px 10px; white-space: nowrap; }
-    tbody td { padding: 10px; border-bottom: 1px solid #eee6d6; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); min-width: 860px; }
+    thead th { background: var(--verde); color: var(--crema); font-family: Georgia, serif; font-size: 13px; text-align: left; padding: 11px 10px; white-space: nowrap; }
+    tbody td { padding: 10px; border-bottom: 1px solid #eee6d6; font-size: 14px; vertical-align: top; }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr.verde   { background: var(--ok-suave); }
-    tbody tr.naranja { background: var(--naranja-suave); }
-    tbody tr.rojo    { background: var(--rojo-suave); }
+    tbody tr.fila-prod { cursor: pointer; }
+    tbody tr.fila-prod:hover td { background: #f7f3e8; }
+    tbody tr.rojo td { background: var(--rojo-suave); }
+    tbody tr.naranja td { background: var(--naranja-suave); }
     .madre { font-family: Georgia, serif; font-weight: bold; color: var(--verde); }
     .pres { font-size: 12px; color: var(--gris); }
     .num { font-weight: bold; white-space: nowrap; }
+    .chica { font-size: 11px; color: var(--gris); font-weight: normal; }
+    .vacia { text-align: center; color: var(--ok); font-weight: bold; padding: 18px; }
 
     .sem { display: inline-block; padding: 4px 11px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; }
     .sem.verde   { background: #e2f0e8; color: var(--ok); }
@@ -65,61 +83,59 @@
     .sem.rojo    { background: #f7d4d4; color: var(--rojo); }
     .sem.gris    { background: #ece9e0; color: var(--gris); }
 
-    .mensaje { max-width: 1100px; margin: 12px auto; padding: 13px 16px; border-radius: 10px; font-size: 14px; display: none; }
+    tr.detalle td { background: #faf8f2; font-size: 12px; color: #555; }
+    .hist { display: flex; flex-wrap: wrap; gap: 6px; }
+    .hist span { background: #fff; border: 1px solid #e6dfcc; border-radius: 6px; padding: 4px 7px; white-space: nowrap; }
+    .hist span.excl { color: var(--gris); }
+    .hist span.erp { border-color: var(--dorado); }
+
+    .mensaje { max-width: 1150px; margin: 12px auto; padding: 13px 16px; border-radius: 10px; font-size: 14px; display: none; }
     .mensaje.error { display: block; background: #fdecec; color: #8a1c1c; border: 1px solid #f3c2c2; }
-    .mensaje.info  { display: block; background: #fbf6e6; color: #6b551d; border: 1px solid #ecdca5; }
-    .pie-nota { max-width: 1100px; margin: 8px auto 0; padding: 0 16px; font-size: 12px; color: var(--gris); }
+    .metodo { font-size: 12px; color: var(--gris); line-height: 1.55; margin-top: 22px; background: #fff; border-radius: 10px; padding: 14px 16px; }
+    .metodo b { color: var(--verde); }
 
-    /* ---------- Barra de sesion (cerrar sesion) ---------- */
-    header { position: relative; }
-    .btn-salir {
-      position: absolute; top: 12px; right: 12px;
-      font-size: 11px; font-weight: bold; letter-spacing: 0.5px;
-      color: var(--verde); background: var(--dorado);
-      border: 1px solid var(--dorado); border-radius: 16px;
-      padding: 6px 12px; cursor: pointer;
-    }
-    .btn-salir:hover { background: #d8bd7e; }
-    .sesion-quien { font-size: 11px; color: var(--dorado); letter-spacing: 0.5px; margin-top: 4px; min-height: 13px; }
-
-    /* ---------- Boton Descargar PDF ---------- */
-    .btn-pdf {
-      padding: 10px 16px; font-size: 14px; font-weight: bold;
-      color: var(--verde); background: var(--dorado);
-      border: 2px solid var(--dorado); border-radius: 8px; cursor: pointer; white-space: nowrap;
-    }
-    .btn-pdf:hover { background: #d8bd7e; }
-
-    /* ---------- Solo visible al imprimir / guardar PDF ---------- */
     .solo-print { display: none; }
-
     @media print {
       body { background: #fff !important; padding: 0; }
-      .barra-top, .btn-salir, .btn-pdf, .pie-nota { display: none !important; }
-      .solo-print { display: block; font-size: 12px; color: #555; margin: 6px 0 16px; }
-      header, .stat, thead th, .sem { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .barra-top, .btn-salir, .btn-volver, tr.detalle, .sec-nota { display: none !important; }
+      .solo-print { display: block; font-size: 12px; color: #555; margin: 6px 0 12px; }
+      header, .stat, thead th, .sem, tbody tr td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .stat, table { box-shadow: none; }
       table { min-width: 0; }
       thead { display: table-header-group; }
       tr { page-break-inside: avoid; }
       h2.sec { page-break-after: avoid; }
-      @page { margin: 12mm; }
+      @page { margin: 10mm; size: landscape; }
     }
   </style>
 </head>
 <body>
   <header>
+    <a class="btn-volver" href="direccion.html">← Mi panel</a>
     <button class="btn-salir" id="btnSalir">Cerrar sesión</button>
     <div class="logo">RECOUROMEX</div>
-    <div class="sub">Reporte Ejecutivo de Inventario</div>
+    <div class="sub">Reporte Ejecutivo · Stock, Consumo y Proyección</div>
     <div class="sesion-quien" id="quien"></div>
   </header>
 
-  <div class="barra-top">
+  <div class="barra-top" id="barra" style="display:none;">
     <div class="fila">
       <div>
-        <label for="semanaSel">Reporte considerando cierres hasta:</label>
-        <select id="semanaSel"><option>cargando…</option></select>
+        <label for="semanaSel">Inventario base (semana)</label>
+        <select id="semanaSel"></select>
+      </div>
+      <div>
+        <label for="ventanaSel">Promedio de consumo</label>
+        <select id="ventanaSel">
+          <option value="4">Últimas 4 semanas</option>
+          <option value="8" selected>Últimas 8 semanas</option>
+          <option value="12">Últimas 12 semanas</option>
+          <option value="0">Todo el historial</option>
+        </select>
+      </div>
+      <div>
+        <label for="leadInp">Reposición proveedor (sem)</label>
+        <input id="leadInp" type="number" min="0" step="0.5" />
       </div>
       <button id="btnPdf" class="btn-pdf">Descargar PDF</button>
     </div>
@@ -129,24 +145,28 @@
 
   <div class="cont" id="cont" style="display:none;">
     <div class="solo-print" id="printInfo"></div>
+    <div id="avisos"></div>
     <div class="stats" id="stats"></div>
 
-    <h2 class="sec">Stock actual por producto</h2>
+    <h2 class="sec">🚨 Alertas: productos en o bajo el mínimo</h2>
+    <div class="sec-nota">Ordenados por lo que se acaba primero.</div>
     <div class="tabla-wrap">
       <table>
-        <thead><tr><th>Producto</th><th>Stock actual</th><th>Unidad</th><th>Mínimo</th><th>Estado</th></tr></thead>
-        <tbody id="tbodyStock"></tbody>
+        <thead><tr><th>Producto</th><th>Stock actual</th><th>Mínimo</th><th>Faltante al mínimo</th><th>Consumo prom./sem</th><th>Dura (semanas)</th><th>Se agota aprox.</th></tr></thead>
+        <tbody id="tbodyAlertas"></tbody>
       </table>
     </div>
 
-    <h2 class="sec">Consumo y proyección</h2>
+    <h2 class="sec">📈 Consumo promedio y proyección de todos los productos</h2>
+    <div class="sec-nota">Toca un producto para ver su historial semana a semana.</div>
     <div class="tabla-wrap">
       <table>
-        <thead><tr><th>Producto</th><th>Consumo prom. / semana</th><th>Semanas de cobertura</th><th>Lectura</th></tr></thead>
-        <tbody id="tbodyConsumo"></tbody>
+        <thead><tr><th>Producto</th><th>Stock actual</th><th>Mínimo</th><th>Consumo prom./sem</th><th>Dura (semanas)</th><th>Llega al mínimo en</th><th>Se agota aprox.</th><th>Acción</th></tr></thead>
+        <tbody id="tbodyProy"></tbody>
       </table>
     </div>
-    <div class="pie-nota">El consumo se calcula con la diferencia de saldos entre cierres consecutivos. Requiere al menos 2 semanas cerradas.</div>
+
+    <div class="metodo" id="metodo"></div>
   </div>
 
   <script>
@@ -154,193 +174,302 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZieml0ZWN5aW1jYWxvcnl3aXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNDk4NjQsImV4cCI6MjA5NDgyNTg2NH0.qdZItXNc2Ck4kilUHWeTi_KHZ9Ptfui3mU_eV8k7ZaA";
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ---- Sesion: mostrar quien inicio sesion y cerrar sesion ----
+    // ---- Solo Direccion / Admin pueden ver este reporte ----
+    const ROLES_PERMITIDOS = ["DIRECCION", "ADMIN"];
+    let sesion = null;
+    try { sesion = JSON.parse(localStorage.getItem("recouromex_sesion") || "null"); } catch (e) {}
+    const autorizado = !!(sesion && ROLES_PERMITIDOS.indexOf(sesion.rol) !== -1);
+
     (function () {
-      try {
-        const s = JSON.parse(localStorage.getItem("recouromex_sesion") || "null");
-        if (s && s.nombre) document.getElementById("quien").textContent = s.nombre + " · " + (s.rol || "");
-      } catch (e) {}
-      const bs = document.getElementById("btnSalir");
-      if (bs) bs.addEventListener("click", function () {
+      if (sesion && sesion.nombre) document.getElementById("quien").textContent = sesion.nombre + " · " + (sesion.rol || "");
+      document.getElementById("btnSalir").addEventListener("click", function () {
         try { localStorage.removeItem("recouromex_sesion"); } catch (e) {}
         window.location.href = "index.html";
       });
     })();
 
-    const COB_BAJA = 4;   // < 4 semanas -> pedir pronto
-    const COB_ALTA = 12;  // > 12 semanas -> cobertura amplia
+    // ---- Parametros ----
+    const LEAD_DEFAULT = 6.4;   // 45 dias de proveedor (dato del Kardex Avanzado)
+    const MARGEN_PRONTO = 4;    // semanas extra sobre el tiempo de reposicion -> "pedir pronto"
 
     const semanaSel = document.getElementById("semanaSel");
+    const ventanaSel = document.getElementById("ventanaSel");
+    const leadInp = document.getElementById("leadInp");
     const mensaje = document.getElementById("mensaje");
-    const cont = document.getElementById("cont");
-    const statsBox = document.getElementById("stats");
-    const tbodyStock = document.getElementById("tbodyStock");
-    const tbodyConsumo = document.getElementById("tbodyConsumo");
 
-    let madres = [];              // [{codigo_madre, nombre, unidad, minimo}]
-    let invMap = {};              // codigo_madre -> {stock, unidad}
-    let cierresPorMadre = {};     // codigo_madre -> [{id_semana, saldo}] ordenado asc
-    let semanas = [];             // lista de id_semana (asc)
+    let madres = [];        // [{codigo_madre, nombre, minimo}]
+    let serie = {};         // codigo_madre -> [{id_semana, fecha, saldo, fuente, unidad}] asc
+    let semanas = [];       // id_semana con conciliacion (asc)
+    let aprobadas = {};     // id_semana -> true si Direccion la aprobo
+    let ultimaAprobada = "";
 
-    function msg(t, tipo) { mensaje.textContent = t; mensaje.className = "mensaje " + tipo; }
-    function fmt(n) { return Number(n).toLocaleString("es-MX", { maximumFractionDigits: 2 }); }
-    function unidadCorta(u) { if (u === "KILOS") return "KG"; if (u === "PIEZAS") return "piezas"; return "LTS"; }
+    function msg(t) { mensaje.textContent = t; mensaje.className = "mensaje error"; }
+    function fmt(n, dec) { return Number(n).toLocaleString("es-MX", { maximumFractionDigits: dec === undefined ? 1 : dec }); }
+    function uc(u) { if (u === "KILOS") return "kg"; if (u === "PIEZAS") return "pz"; return "L"; }
+    function esc(s) {
+      const mapa = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
+      return String(s === null || s === undefined ? "" : s).replace(/[&<>"']/g, function (c) { return mapa[c]; });
+    }
+    function fechaSemana(id) { const m = /(\d{4})-(\d{2})-(\d{2})/.exec(id || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+    function fechaCorta(d) { return d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }); }
+    function fechaLarga(d) { return d.toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }); }
+    function dias(a, b) { return Math.round((b - a) / 86400000); }
 
-    function estadoStock(stock, minimo) {
-      if (stock === null || stock === undefined) return { clave: "gris", txt: "sin dato" };
-      if (stock === 0) return { clave: "rojo", txt: "SIN STOCK" };
-      if (stock <= minimo) return { clave: "naranja", txt: "BAJO MÍNIMO" };
-      return { clave: "verde", txt: "OK" };
+    // Saldo "confiable" de la semana:
+    //  - Conciliacion OK, o Alma decidio AJUSTAR_ERP (el ERP estaba mal)  -> se usa el FISICO
+    //  - Incongruencia con RECONTAR / AJUSTAR_KARDEX / LIBERAR_NOTA / etc. -> se usa el ERP
+    function saldoConfiable(r) {
+      const fis = parseFloat(r.fisico), erp = parseFloat(r.erp);
+      const usaFisico = r.alerta !== "INCONGRUENCIA" || r.accion === "AJUSTAR_ERP";
+      if (usaFisico && !isNaN(fis)) return { saldo: fis, fuente: "FISICO" };
+      if (!isNaN(erp)) return { saldo: erp, fuente: "ERP" };
+      return isNaN(fis) ? null : { saldo: fis, fuente: "FISICO" };
     }
 
-    // ---------- Carga inicial ----------
+    async function traerTodo(tabla, columnas) {
+      const tam = 1000; let desde = 0, todo = [];
+      while (true) {
+        const { data, error } = await db.from(tabla).select(columnas).range(desde, desde + tam - 1);
+        if (error) throw error;
+        todo = todo.concat(data || []);
+        if (!data || data.length < tam) break;
+        desde += tam;
+      }
+      return todo;
+    }
+
     async function init() {
+      if (!autorizado) {
+        msg("Este reporte es exclusivo del panel de Dirección. Inicia sesión con tu código de Dirección.");
+        return;
+      }
+      let lead = LEAD_DEFAULT;
+      try { const g = parseFloat(localStorage.getItem("rep_lead_sem")); if (!isNaN(g)) lead = g; } catch (e) {}
+      leadInp.value = lead;
+      try { const v = localStorage.getItem("rep_ventana"); if (v !== null) ventanaSel.value = v; } catch (e) {}
+
       try {
-        const [resProd, resInv, resCie] = await Promise.all([
-          db.from("productos").select("id, codigo_madre, nombre, unidad_conciliacion, minimo_lts").order("id", { ascending: true }),
-          db.from("inventario").select("codigo_madre, stock_actual, unidad"),
-          db.from("cierres").select("id_semana, codigo_madre, saldo")
+        const [prods, concs, sems] = await Promise.all([
+          traerTodo("productos", "id, codigo_madre, nombre, minimo_lts"),
+          traerTodo("conciliaciones", "id_semana, codigo_madre, unidad, fisico, erp, alerta, accion"),
+          traerTodo("semanas", "id_semana, estado")
         ]);
-        if (resProd.error) throw resProd.error;
-        if (resInv.error) throw resInv.error;
-        if (resCie.error) throw resCie.error;
 
-        // Madres (orden por id) con minimo = SUMA de las presentaciones
-        const orden = [], mapaM = {};
-        (resProd.data || []).forEach(function (p) {
-          if (!mapaM[p.codigo_madre]) {
-            mapaM[p.codigo_madre] = { codigo_madre: p.codigo_madre, nombre: p.nombre, unidad: p.unidad_conciliacion, minimo: 0 };
-            orden.push(p.codigo_madre);
-          }
-          mapaM[p.codigo_madre].minimo += (parseFloat(p.minimo_lts) || 0);
+        // Productos madre (orden por id); minimo = suma de presentaciones
+        prods.sort(function (a, b) { return a.id - b.id; });
+        const mapa = {};
+        prods.forEach(function (p) {
+          if (!mapa[p.codigo_madre]) { mapa[p.codigo_madre] = { codigo_madre: p.codigo_madre, nombre: p.nombre, minimo: 0 }; madres.push(mapa[p.codigo_madre]); }
+          mapa[p.codigo_madre].minimo += (parseFloat(p.minimo_lts) || 0);
         });
-        madres = orden.map(function (m) { return mapaM[m]; });
+        madres.forEach(function (m) { if (m.nombre) m.nombre = m.nombre.replace(/\s+\d+L$/, ""); });
 
-        // Inventario por madre
-        invMap = {};
-        (resInv.data || []).forEach(function (r) {
-          invMap[r.codigo_madre] = { stock: parseFloat(r.stock_actual), unidad: r.unidad };
-        });
-
-        // Cierres por madre (ordenados por semana asc) + lista de semanas
-        cierresPorMadre = {};
+        // Serie semanal por producto
         const setSem = {};
-        (resCie.data || []).forEach(function (r) {
-          if (!cierresPorMadre[r.codigo_madre]) cierresPorMadre[r.codigo_madre] = [];
-          cierresPorMadre[r.codigo_madre].push({ id_semana: r.id_semana, saldo: parseFloat(r.saldo) });
+        concs.forEach(function (r) {
+          const s = saldoConfiable(r); const f = fechaSemana(r.id_semana);
+          if (!s || !f) return;
+          (serie[r.codigo_madre] = serie[r.codigo_madre] || []).push({ id_semana: r.id_semana, fecha: f, saldo: s.saldo, fuente: s.fuente, unidad: r.unidad });
           setSem[r.id_semana] = true;
         });
-        Object.keys(cierresPorMadre).forEach(function (m) {
-          cierresPorMadre[m].sort(function (a, b) { return a.id_semana < b.id_semana ? -1 : 1; });
-        });
+        Object.keys(serie).forEach(function (k) { serie[k].sort(function (a, b) { return a.fecha - b.fecha; }); });
         semanas = Object.keys(setSem).sort();
 
-        // Selector de semanas (por defecto, la ultima)
-        if (semanas.length === 0) {
-          semanaSel.innerHTML = '<option value="">(sin cierres)</option>';
-        } else {
-          semanaSel.innerHTML = semanas.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join("");
-          semanaSel.value = semanas[semanas.length - 1];
-        }
+        sems.forEach(function (s) {
+          if (s.estado === "CERRADA") { aprobadas[s.id_semana] = true; if (s.id_semana > ultimaAprobada) ultimaAprobada = s.id_semana; }
+        });
 
-        cont.style.display = "";
+        if (!semanas.length) { msg("Todavía no hay conciliaciones guardadas."); return; }
+        semanaSel.innerHTML = semanas.slice().reverse().map(function (s) {
+          return '<option value="' + s + '">' + s + (aprobadas[s] ? "  ✓ aprobada" : "  · sin aprobar") + '</option>';
+        }).join("");
+        semanaSel.value = semanas[semanas.length - 1];
+
+        document.getElementById("barra").style.display = "";
+        document.getElementById("cont").style.display = "";
         render();
       } catch (e) {
-        msg("Error al cargar el reporte: " + e.message, "error");
+        msg("Error al cargar el reporte: " + e.message);
       }
     }
 
-    // ---------- Consumo / cobertura ----------
-    function calcularConsumo(codigoMadre, hastaSemana, stock) {
-      const todos = cierresPorMadre[codigoMadre] || [];
-      const lista = todos.filter(function (c) { return c.id_semana <= hastaSemana; });
+    // ---------- Calculo por producto ----------
+    function calcular(m, base, ventana, lead) {
+      const baseF = fechaSemana(base);
+      const lista = (serie[m.codigo_madre] || []).filter(function (p) { return p.fecha <= baseF; });
+      const r = { m: m, lista: lista, puntos: [], stock: null, unidad: "", consumo: null, semanasUsadas: 0, excluidas: 0 };
+      if (!lista.length) return r;
 
-      if (lista.length < 2) return { estado: "sindato" };
+      const ult = lista[lista.length - 1];
+      r.stock = ult.saldo; r.unidad = ult.unidad; r.fechaStock = ult.fecha; r.semStock = ult.id_semana;
+      r.desfase = ult.id_semana !== base;
 
-      // Promedio de (saldo anterior - saldo actual) entre cierres consecutivos
-      let suma = 0, n = 0;
-      for (let i = 1; i < lista.length; i++) { suma += (lista[i - 1].saldo - lista[i].saldo); n++; }
-      const consumoProm = suma / n;
+      const desde = ventana > 0 ? new Date(baseF.getTime() - ventana * 7 * 86400000) : null;
+      let sumaConsumo = 0, sumaSemanas = 0;
+      for (let i = 1; i < lista.length; i++) {
+        const a = lista[i - 1], b = lista[i];
+        const sem = dias(a.fecha, b.fecha) / 7;
+        const dentro = !desde || a.fecha >= desde;
+        const baja = a.saldo - b.saldo;
+        const p = { ant: a, act: b, sem: sem, baja: baja, dentro: dentro, entrada: baja < 0 };
+        r.puntos.push(p);
+        if (!dentro || sem <= 0) continue;
+        if (p.entrada) { r.excluidas++; continue; }   // subio el stock: hubo entrada o ajuste -> no se usa
+        sumaConsumo += baja; sumaSemanas += sem;
+      }
+      r.semanasUsadas = sumaSemanas;
+      if (sumaSemanas > 0) r.consumo = sumaConsumo / sumaSemanas;
 
-      if (consumoProm <= 0) {
-        // No baja (estable o repuesto) -> cobertura efectivamente amplia
-        return { estado: "amplia", consumoProm: consumoProm, cobertura: null };
+      if (r.consumo !== null && r.consumo > 0) {
+        r.cobertura = r.stock / r.consumo;
+        r.aMinimo = (r.stock - m.minimo) / r.consumo;
+        r.agota = new Date(r.fechaStock.getTime() + r.cobertura * 7 * 86400000);
       }
 
-      const cobertura = (stock === null || stock === undefined) ? null : (stock / consumoProm);
-      return { estado: "ok", consumoProm: consumoProm, cobertura: cobertura };
+      // Estado
+      const bajoMin = m.minimo > 0 && r.stock <= m.minimo;
+      r.bajoMin = bajoMin;
+      if (r.stock <= 0) r.estado = { clave: "rojo", txt: "SIN STOCK", orden: 0 };
+      else if (r.cobertura !== undefined && r.cobertura <= lead) r.estado = { clave: "rojo", txt: "PEDIR YA", orden: 1 };
+      else if (bajoMin) r.estado = { clave: "naranja", txt: "BAJO MÍNIMO", orden: 2 };
+      else if (r.cobertura !== undefined && r.cobertura <= lead + MARGEN_PRONTO) r.estado = { clave: "naranja", txt: "PEDIR PRONTO", orden: 3 };
+      else if (r.cobertura === undefined) r.estado = { clave: "gris", txt: "SIN CONSUMO", orden: 5 };
+      else r.estado = { clave: "verde", txt: "OK", orden: 4 };
+      return r;
     }
 
-    function lecturaCobertura(cob) {
-      if (cob < COB_BAJA) return { clave: "rojo", txt: "Pedir pronto" };
-      if (cob <= COB_ALTA) return { clave: "naranja", txt: "Monitorear" };
-      return { clave: "verde", txt: "Cobertura amplia" };
+    function celdaProducto(r) {
+      return '<span class="madre">' + esc(r.m.codigo_madre) + '</span><br><span class="pres">' + esc(r.m.nombre) + '</span>';
+    }
+    function txtStock(r) { return r.stock === null ? "—" : fmt(r.stock) + " " + uc(r.unidad); }
+    function txtConsumo(r) {
+      if (r.consumo === null) return '—<br><span class="chica">sin datos suficientes</span>';
+      return fmt(r.consumo) + " " + uc(r.unidad) + '<br><span class="chica">' + fmt(r.semanasUsadas, 0) + " sem. medidas" +
+        (r.excluidas ? " · " + r.excluidas + " con entrada" : "") + '</span>';
+    }
+    function txtCob(r) { return r.cobertura === undefined ? "—" : fmt(r.cobertura) + " sem"; }
+    function txtAgota(r) { return r.agota ? fechaLarga(r.agota) : "—"; }
+    function txtAMin(r) {
+      if (r.m.minimo <= 0) return '<span class="chica">sin mínimo</span>';
+      if (r.stock !== null && r.stock <= r.m.minimo) return '<span class="sem rojo">ya está debajo</span>';
+      return r.aMinimo === undefined ? "—" : fmt(r.aMinimo) + " sem";
+    }
+
+    function historial(r) {
+      if (!r.lista.length) return "Sin historial.";
+      let h = '<div class="hist">';
+      r.lista.slice().reverse().forEach(function (p) {
+        const pt = r.puntos.filter(function (x) { return x.act === p; })[0];
+        let extra = "", cls = p.fuente === "ERP" ? "erp" : "";
+        if (pt) {
+          if (pt.entrada) { extra = " (+" + fmt(-pt.baja) + " entrada)"; cls += " excl"; }
+          else extra = " (−" + fmt(pt.baja) + ")";
+        }
+        const tip = p.fuente === "ERP" ? "Se usó el ERP: el conteo físico se marcó como incongruencia" : "Conteo físico";
+        h += '<span class="' + cls + '" title="' + tip + '">' + fechaCorta(p.fecha) + ": <b>" + fmt(p.saldo) + "</b>" + extra +
+             (p.fuente === "ERP" ? " · ERP" : "") + "</span>";
+      });
+      return h + "</div>";
     }
 
     // ---------- Dibujar ----------
     function render() {
-      const hasta = semanaSel.value || (semanas.length ? semanas[semanas.length - 1] : "");
-      const piInfo = document.getElementById("printInfo");
-      if (piInfo) piInfo.textContent = "Cierres considerados hasta: " + (hasta || "—") + "  ·  Generado: " + new Date().toLocaleString("es-MX");
-      let cVerde = 0, cNaranja = 0, cRojo = 0, conDato = 0;
+      const base = semanaSel.value;
+      const ventana = parseInt(ventanaSel.value, 10);
+      let lead = parseFloat(leadInp.value); if (isNaN(lead) || lead < 0) lead = LEAD_DEFAULT;
+      try { localStorage.setItem("rep_lead_sem", lead); localStorage.setItem("rep_ventana", ventana); } catch (e) {}
 
-      tbodyStock.innerHTML = "";
-      tbodyConsumo.innerHTML = "";
+      const res = madres.map(function (m) { return calcular(m, base, ventana, lead); });
+      const baseF = fechaSemana(base);
 
-      madres.forEach(function (m) {
-        const inv = invMap[m.codigo_madre];
-        const stock = inv ? inv.stock : null;
-        const unidad = inv ? inv.unidad : m.unidad;
-        const uc = unidadCorta(unidad);
+      // Avisos
+      const hoy = new Date();
+      let av = "";
+      const dSin = dias(baseF, hoy);
+      if (base === semanas[semanas.length - 1] && dSin > 10) {
+        av += '<div class="aviso alto">⚠ El último inventario conciliado es del <b>' + fechaLarga(baseF) + '</b> (hace ' + dSin +
+              ' días). La proyección puede estar desactualizada.</div>';
+      }
+      const pendientes = semanas.filter(function (s) { return !aprobadas[s]; }).length;
+      if (pendientes) {
+        av += '<div class="aviso info">Este reporte usa la <b>conciliación semanal</b> de Fernando y Alma aunque la semana no esté aprobada. ' +
+              'Hay <b>' + pendientes + ' semana(s) conciliadas sin aprobar</b> (última aprobada: ' + (ultimaAprobada || "ninguna") + ').</div>';
+      }
+      document.getElementById("avisos").innerHTML = av;
 
-        // --- Fila de stock ---
-        const est = estadoStock(stock, m.minimo);
-        if (est.clave === "verde") cVerde++;
-        else if (est.clave === "naranja") cNaranja++;
-        else if (est.clave === "rojo") cRojo++;
-        if (stock !== null && stock !== undefined) conDato++;
+      document.getElementById("printInfo").textContent = "Inventario base: " + base + " (" + fechaLarga(baseF) + ")  ·  Promedio: " +
+        (ventana ? "últimas " + ventana + " semanas" : "todo el historial") + "  ·  Reposición proveedor: " + fmt(lead) +
+        " sem  ·  Generado: " + hoy.toLocaleString("es-MX");
 
-        const trS = document.createElement("tr");
-        trS.className = est.clave;
-        trS.innerHTML =
-          '<td><span class="madre">' + m.codigo_madre + '</span><br><span class="pres">' + m.nombre + '</span></td>' +
-          '<td class="num">' + (stock === null ? "—" : fmt(stock) + " " + uc) + '</td>' +
-          '<td>' + unidad + '</td>' +
-          '<td class="num">' + fmt(m.minimo) + " " + uc + '</td>' +
-          '<td><span class="sem ' + est.clave + '">' + est.txt + '</span></td>';
-        tbodyStock.appendChild(trS);
+      // Tarjetas
+      const cuenta = function (f) { return res.filter(f).length; };
+      document.getElementById("stats").innerHTML =
+        '<div class="stat"><div class="n">' + res.length + '</div><div class="l">Productos</div></div>' +
+        '<div class="stat rojo"><div class="n">' + cuenta(function (r) { return r.estado && r.estado.orden <= 1; }) + '</div><div class="l">Sin stock / pedir ya</div></div>' +
+        '<div class="stat naranja"><div class="n">' + cuenta(function (r) { return r.bajoMin; }) + '</div><div class="l">En o bajo el mínimo</div></div>' +
+        '<div class="stat naranja"><div class="n">' + cuenta(function (r) { return r.estado && r.estado.orden === 3; }) + '</div><div class="l">Pedir pronto</div></div>' +
+        '<div class="stat verde"><div class="n">' + cuenta(function (r) { return r.estado && r.estado.orden === 4; }) + '</div><div class="l">OK</div></div>';
 
-        // --- Fila de consumo ---
-        const c = calcularConsumo(m.codigo_madre, hasta, stock);
-        let consumoTxt, coberturaTxt, lect;
-        if (c.estado === "sindato") {
-          consumoTxt = "—"; coberturaTxt = "—"; lect = { clave: "gris", txt: "Sin dato de consumo" };
-        } else if (c.estado === "amplia") {
-          consumoTxt = "≈ 0 " + uc + "/sem"; coberturaTxt = "—"; lect = { clave: "verde", txt: "Cobertura amplia" };
-        } else {
-          consumoTxt = fmt(c.consumoProm) + " " + uc + "/sem";
-          coberturaTxt = (c.cobertura === null) ? "—" : fmt(c.cobertura) + " sem";
-          lect = (c.cobertura === null) ? { clave: "gris", txt: "Sin dato de consumo" } : lecturaCobertura(c.cobertura);
-        }
+      const porAgotarse = function (a, b) {
+        const ca = a.cobertura === undefined ? Infinity : a.cobertura, cb = b.cobertura === undefined ? Infinity : b.cobertura;
+        return ca - cb;
+      };
 
-        const trC = document.createElement("tr");
-        trC.innerHTML =
-          '<td><span class="madre">' + m.codigo_madre + '</span></td>' +
-          '<td class="num">' + consumoTxt + '</td>' +
-          '<td class="num">' + coberturaTxt + '</td>' +
-          '<td><span class="sem ' + lect.clave + '">' + lect.txt + '</span></td>';
-        tbodyConsumo.appendChild(trC);
+      // Tabla de alertas
+      const alertas = res.filter(function (r) { return r.stock !== null && (r.bajoMin || r.stock <= 0); }).sort(porAgotarse);
+      const tA = document.getElementById("tbodyAlertas");
+      tA.innerHTML = alertas.length ? "" : '<tr><td colspan="7" class="vacia">✓ Ningún producto está en o debajo de su mínimo.</td></tr>';
+      alertas.forEach(function (r) {
+        const tr = document.createElement("tr");
+        tr.className = r.estado.orden <= 1 ? "rojo" : "naranja";
+        tr.innerHTML = '<td>' + celdaProducto(r) + '</td>' +
+          '<td class="num">' + txtStock(r) + '</td>' +
+          '<td class="num">' + fmt(r.m.minimo) + " " + uc(r.unidad) + '</td>' +
+          '<td class="num">' + fmt(Math.max(0, r.m.minimo - r.stock)) + " " + uc(r.unidad) + '</td>' +
+          '<td class="num">' + txtConsumo(r) + '</td>' +
+          '<td class="num">' + txtCob(r) + '</td>' +
+          '<td class="num">' + txtAgota(r) + '</td>';
+        tA.appendChild(tr);
       });
 
-      // --- Tarjetas de resumen ---
-      statsBox.innerHTML =
-        '<div class="stat total"><div class="n">' + madres.length + '</div><div class="l">Productos (madre)</div></div>' +
-        '<div class="stat verde"><div class="n">' + cVerde + '</div><div class="l">OK (verde)</div></div>' +
-        '<div class="stat naranja"><div class="n">' + cNaranja + '</div><div class="l">Bajo mínimo (naranja)</div></div>' +
-        '<div class="stat rojo"><div class="n">' + cRojo + '</div><div class="l">Sin stock (rojo)</div></div>';
+      // Tabla de proyeccion (por estado y luego por lo que se acaba primero)
+      const tP = document.getElementById("tbodyProy");
+      tP.innerHTML = "";
+      res.slice().sort(function (a, b) {
+        const oa = a.estado ? a.estado.orden : 9, ob = b.estado ? b.estado.orden : 9;
+        return oa !== ob ? oa - ob : porAgotarse(a, b);
+      }).forEach(function (r) {
+        const tr = document.createElement("tr");
+        tr.className = "fila-prod";
+        const est = r.estado || { clave: "gris", txt: "SIN DATO" };
+        tr.innerHTML = '<td>' + celdaProducto(r) + (r.desfase ? '<br><span class="chica">último dato: ' + esc(r.semStock) + '</span>' : "") + '</td>' +
+          '<td class="num">' + txtStock(r) + '</td>' +
+          '<td class="num">' + (r.m.minimo > 0 ? fmt(r.m.minimo) + " " + uc(r.unidad) : "—") + '</td>' +
+          '<td class="num">' + txtConsumo(r) + '</td>' +
+          '<td class="num">' + txtCob(r) + '</td>' +
+          '<td class="num">' + txtAMin(r) + '</td>' +
+          '<td class="num">' + txtAgota(r) + '</td>' +
+          '<td><span class="sem ' + est.clave + '">' + est.txt + '</span></td>';
+        const det = document.createElement("tr");
+        det.className = "detalle"; det.style.display = "none";
+        det.innerHTML = '<td colspan="8">' + historial(r) + '</td>';
+        tr.addEventListener("click", function () { det.style.display = det.style.display === "none" ? "" : "none"; });
+        tP.appendChild(tr); tP.appendChild(det);
+      });
+
+      document.getElementById("metodo").innerHTML =
+        '<b>Cómo se calcula.</b> ' +
+        '<b>Stock actual</b> = conteo físico conciliado de la semana base (si Alma marcó incongruencia y no fue error del ERP, se toma el ERP). ' +
+        '<b>Consumo promedio</b> = lo que bajó el stock entre un inventario y el siguiente, dividido entre las semanas transcurridas, dentro de la ventana elegida. ' +
+        'Las semanas en que el stock <i>subió</i> (entrada de mercancía o ajuste) no se cuentan, para no bajar el promedio artificialmente. ' +
+        '<b>Dura (semanas)</b> = stock actual ÷ consumo promedio. ' +
+        '<b>PEDIR YA</b> = dura menos que el tiempo de reposición del proveedor (' + fmt(lead) + ' sem). ' +
+        '<b>PEDIR PRONTO</b> = dura menos de ' + fmt(lead + MARGEN_PRONTO) + ' sem.';
     }
 
     semanaSel.addEventListener("change", render);
+    ventanaSel.addEventListener("change", render);
+    leadInp.addEventListener("change", render);
     document.getElementById("btnPdf").addEventListener("click", function () { window.print(); });
     init();
   </script>
