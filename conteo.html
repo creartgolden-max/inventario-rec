@@ -269,6 +269,13 @@
     .mensaje.error { display: block; background: #fdecec; color: #8a1c1c; border: 1px solid #f3c2c2; }
     .mensaje.info  { display: block; background: #fbf6e6; color: #6b551d; border: 1px solid #ecdca5; }
 
+    /* ---------- Aviso de estado de la semana (bloqueo / devolucion) ---------- */
+    #avisoEstado { margin-top: 12px; padding: 13px 16px; border-radius: 10px; font-size: 14px; display: none; }
+    #avisoEstado.bloqueada, #avisoEstado.cerrada { background: #eef1f6; color: #2c3e63; border: 1px solid #c7d0e2; }
+    #avisoEstado.devuelta { background: #fdf0e6; color: #8a4b1c; border: 2px solid #f0cda5; }
+    .lista.bloqueado input, .lista.bloqueado button { background: #f0f0f0 !important; color: #999 !important; cursor: not-allowed; }
+    .lista.bloqueado .card-prod { opacity: 0.9; }
+
     /* ---------- Barra de sesion (cerrar sesion) ---------- */
     header { position: relative; }
     .btn-salir {
@@ -298,6 +305,7 @@
   </div>
 
   <div id="mensaje" class="mensaje" style="margin-top:12px;"></div>
+  <div id="avisoEstado"></div>
 
   <div class="lista" id="lista">
     <div class="mensaje info" style="display:block;">Cargando productos…</div>
@@ -338,10 +346,13 @@
     const inputSemana = document.getElementById("semana");
     const progresoTexto = document.getElementById("progresoTexto");
     const progresoRelleno = document.getElementById("progresoRelleno");
+    const avisoEstado = document.getElementById("avisoEstado");
 
     const LITROS_POR_BARRIL = 120; // un barril cerrado = 120 L
 
     let productos = [];
+    let modoBloqueado = false;   // true = semana en revision/cerrada: solo lectura
+    let estadoSemana = null;     // null/PENDIENTE | DEVUELTA | CERRADA
 
     function msg(texto, tipo) {
       mensaje.textContent = texto;
@@ -401,6 +412,7 @@
         render();
         actualizarProgreso();
         btnGuardar.disabled = false;
+        if (inputSemana.value.trim()) cargarSemana(); // por si ya habia semana escrita
       } catch (e) {
         lista.innerHTML = "";
         msg("Error de conexión: " + e.message, "error");
@@ -631,6 +643,10 @@
         msg("Escribe el id de la semana (ej: SEM-2026-05-18) antes de guardar.", "error");
         return;
       }
+      if (modoBloqueado) {
+        msg("Esta semana está bloqueada (en revisión o aprobada) y no se puede editar.", "error");
+        return;
+      }
 
       const capturados = [];
       productos.forEach(function (prod) {
@@ -723,15 +739,122 @@
         }
 
         msg("✓ Conteo guardado: " + capturados.length + " producto(s) para la semana " + idSemana + ".", "exito");
+        btnGuardar.textContent = "Guardar conteo";
+        // "Bloquear al guardar": re-evalua el estado. Una semana fresca queda
+        // bloqueada; una DEVUELTA sigue editable hasta que Alma la reenvie.
+        await cargarSemana();
       } catch (e) {
         msg("Error al guardar: " + e.message, "error");
-      } finally {
         btnGuardar.disabled = false;
         btnGuardar.textContent = "Guardar conteo";
       }
     }
 
     btnGuardar.addEventListener("click", guardar);
+
+    // ============================================================
+    //  Candado por semana:
+    //   - fresca (sin conteos)      -> editable
+    //   - ya capturada (no devuelta)-> BLOQUEADA (solo lectura, gris)
+    //   - DEVUELTA por Direccion    -> editable (corregir) + aviso con motivo
+    //   - CERRADA (aprobada)        -> BLOQUEADA
+    // ============================================================
+    function aplicarBloqueo(bloq) {
+      modoBloqueado = bloq;
+      lista.querySelectorAll("input, button").forEach(function (el) { el.disabled = bloq; });
+      if (bloq) lista.classList.add("bloqueado"); else lista.classList.remove("bloqueado");
+      btnGuardar.disabled = bloq;
+    }
+
+    function limpiarCampos() {
+      productos.forEach(function (prod) {
+        if (tipoProducto(prod) === "BARRIL") {
+          const cer = document.getElementById("cerrados-" + prod.id); if (cer) cer.value = "";
+          const cont = document.getElementById("abiertos-" + prod.id);
+          if (cont) { cont.innerHTML = ""; cont.appendChild(crearFilaAbierto(prod)); }
+          actualizarTotalBarril(prod);
+        } else {
+          const inp = document.getElementById("piezas-" + prod.id); if (inp) inp.value = "";
+          actualizarEquivalente(prod);
+        }
+        const obs = document.getElementById("obs-" + prod.id); if (obs) obs.value = "";
+      });
+    }
+
+    function prefillSemana(rows) {
+      const porId = {};
+      rows.forEach(function (r) { porId[r.producto_id] = r; });
+      productos.forEach(function (prod) {
+        const r = porId[prod.id];
+        if (!r) return;
+        if (tipoProducto(prod) === "BARRIL") {
+          const cer = document.getElementById("cerrados-" + prod.id);
+          if (cer && r.barriles_cerrados != null) cer.value = r.barriles_cerrados;
+          const cont = document.getElementById("abiertos-" + prod.id);
+          if (cont) {
+            cont.innerHTML = "";
+            const pesos = (r.detalle_abiertos != null && String(r.detalle_abiertos).trim() !== "")
+              ? String(r.detalle_abiertos).split(",").map(function (s) { return s.trim(); }).filter(function (s) { return s !== ""; })
+              : [];
+            if (pesos.length) {
+              pesos.forEach(function (p) { const row = crearFilaAbierto(prod); row.querySelector("input").value = p; cont.appendChild(row); });
+            } else {
+              cont.appendChild(crearFilaAbierto(prod));
+            }
+          }
+          actualizarTotalBarril(prod);
+        } else {
+          const inp = document.getElementById("piezas-" + prod.id);
+          if (inp && r.piezas != null) inp.value = r.piezas;
+          actualizarEquivalente(prod);
+        }
+        const obs = document.getElementById("obs-" + prod.id);
+        if (obs && r.observaciones != null) obs.value = r.observaciones;
+      });
+    }
+
+    async function cargarSemana() {
+      const idSemana = inputSemana.value.trim();
+      avisoEstado.style.display = "none"; avisoEstado.innerHTML = ""; avisoEstado.className = "";
+      if (productos.length === 0) return;
+      if (!idSemana) { limpiarCampos(); aplicarBloqueo(false); estadoSemana = null; actualizarProgreso(); return; }
+
+      try {
+        const [resC, resS] = await Promise.all([
+          db.from("conteos").select("producto_id,piezas,equiv_lts,equiv_kg,barriles_cerrados,peso_abiertos,detalle_abiertos,observaciones").eq("id_semana", idSemana),
+          db.from("semanas").select("*").eq("id_semana", idSemana).maybeSingle()
+        ]);
+        const conteos = (resC && resC.data) ? resC.data : [];
+        const sem = (resS && resS.data) ? resS.data : null;
+        estadoSemana = sem ? sem.estado : null;
+
+        limpiarCampos();
+        if (conteos.length > 0) prefillSemana(conteos);
+
+        if (estadoSemana === "CERRADA") {
+          aplicarBloqueo(true);
+          avisoEstado.className = "cerrada"; avisoEstado.style.display = "block";
+          avisoEstado.innerHTML = "🔒 Esta semana ya fue aprobada por Dirección. El conteo no se puede editar.";
+        } else if (estadoSemana === "DEVUELTA") {
+          aplicarBloqueo(false);
+          avisoEstado.className = "devuelta"; avisoEstado.style.display = "block";
+          avisoEstado.innerHTML = "↩️ <b>Dirección devolvió esta semana.</b> Corrige las cantidades y vuelve a guardar.<br><b>Motivo:</b> " +
+            (sem.motivo_devolucion || "(sin motivo)") + (sem.devuelta_por ? (" — " + sem.devuelta_por) : "");
+        } else if (conteos.length > 0) {
+          aplicarBloqueo(true);
+          avisoEstado.className = "bloqueada"; avisoEstado.style.display = "block";
+          avisoEstado.innerHTML = "🔒 Esta semana ya fue capturada y está en revisión. Si necesitas corregir, pide a Dirección que la <b>devuelva</b>.";
+        } else {
+          aplicarBloqueo(false); // semana fresca
+        }
+        actualizarProgreso();
+      } catch (e) {
+        aplicarBloqueo(false); // ante cualquier falla, no estorbar la captura
+      }
+    }
+
+    inputSemana.addEventListener("change", cargarSemana);
+    inputSemana.addEventListener("keydown", function (e) { if (e.key === "Enter") cargarSemana(); });
 
     // Arranque
     cargarProductos();
