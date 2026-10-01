@@ -53,6 +53,7 @@
     .mensaje.exito { display: block; background: #e7f3ec; color: #14532d; border: 1px solid #b6dcc3; }
     .mensaje.error { display: block; background: #fdecec; color: #8a1c1c; border: 1px solid #f3c2c2; }
     .mensaje.info  { display: block; background: #fbf6e6; color: #6b551d; border: 1px solid #ecdca5; }
+    #avisoDev { max-width: 1100px; margin: 12px auto; padding: 14px 16px; border-radius: 10px; font-size: 14px; background: #fdf0e6; color: #8a4b1c; border: 2px solid #f0cda5; display: none; }
   </style>
 </head>
 <body>
@@ -73,6 +74,7 @@
     <div class="resumen" id="resumen"></div>
   </div>
   <div id="mensaje" class="mensaje"></div>
+  <div id="avisoDev"></div>
   <div class="tabla-wrap" id="tablaWrap" style="display:none;">
     <table>
       <thead>
@@ -98,7 +100,8 @@
     const ERP_EN_KILOS={"CLEAN-LPN":true};
     const ACCIONES=["RECONTAR","AJUSTAR_ERP","AJUSTAR_KARDEX","LIBERAR_NOTA","IGNORAR"];
     const inputSemana=document.getElementById("semana"),btnCargar=document.getElementById("btnCargar"),btnGuardar=document.getElementById("btnGuardar"),mensaje=document.getElementById("mensaje"),tablaWrap=document.getElementById("tablaWrap"),tbody=document.getElementById("tbody"),resumen=document.getElementById("resumen");
-    let grupos=[],idSemana="";
+    let grupos=[],idSemana="",semanaDevueltaAlma=false;
+    const avisoDev=document.getElementById("avisoDev");
     function msg(t,tp){mensaje.textContent=t;mensaje.className="mensaje "+tp;}
     function fmt(n){return Number(n).toLocaleString("es-MX",{maximumFractionDigits:2});}
     function unidadCorta(u){if(u==="KILOS")return "KG";if(u==="PIEZAS")return "piezas";return "LTS";}
@@ -143,6 +146,14 @@
         render();tablaWrap.style.display="";btnGuardar.disabled=false;
         msg(conteos.length===0?"Aviso: sin conteo de Fernando para "+idSemana+". Físicos en 0.":"Conciliación cargada para "+idSemana+" · "+grupos.length+" productos.",conteos.length===0?"info":"exito");
         actualizarResumen();
+        semanaDevueltaAlma=false;avisoDev.style.display="none";avisoDev.innerHTML="";
+        try{
+          const{data:sem}=await db.from("semanas").select("*").eq("id_semana",idSemana).maybeSingle();
+          if(sem&&sem.estado==="DEVUELTA"){
+            semanaDevueltaAlma=true;avisoDev.style.display="block";
+            avisoDev.innerHTML="↩️ <b>Dirección devolvió esta semana.</b> Corrige lo indicado y vuelve a guardar la conciliación.<br><b>Motivo:</b> "+(sem.motivo_devolucion||"(sin motivo)")+(sem.devuelta_por?(" — "+sem.devuelta_por):"");
+          }
+        }catch(e){}
       }catch(e){tablaWrap.style.display="none";msg("Error al cargar: "+e.message,"error");}
       finally{btnCargar.disabled=false;btnCargar.textContent="Cargar conciliación";}
     }
@@ -196,7 +207,13 @@
           else{nuevos.push(reg);}
         }
         if(nuevos.length>0){const{error}=await db.from("conciliaciones").insert(nuevos);if(error)throw error;}
-        msg("✓ Conciliación guardada: "+registros.length+" renglones para "+idSemana+".","exito");
+        if(semanaDevueltaAlma){
+          try{await db.from("semanas").update({estado:"PENDIENTE"}).eq("id_semana",idSemana);}catch(e){}
+          semanaDevueltaAlma=false;avisoDev.style.display="none";avisoDev.innerHTML="";
+          msg("✓ Conciliación corregida y re-enviada a Dirección ("+registros.length+" renglones) para "+idSemana+".","exito");
+        }else{
+          msg("✓ Conciliación guardada: "+registros.length+" renglones para "+idSemana+".","exito");
+        }
       }catch(e){msg("Error al guardar: "+e.message,"error");}
       finally{btnGuardar.disabled=false;btnGuardar.textContent="Guardar conciliación";}
     }

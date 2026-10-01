@@ -73,6 +73,17 @@
     #btnAprobar:hover:not(:disabled) { background: var(--dorado); color: var(--verde); }
     #btnAprobar:disabled { opacity: 0.45; cursor: not-allowed; }
 
+    /* Botones de accion lado a lado: Aprobar (verde) + Rechazar (rojo) */
+    .botones-cierre { display: flex; gap: 10px; }
+    #btnAprobar { flex: 2; width: auto; }
+    #btnRechazar { flex: 1; padding: 15px; font-size: 15px; font-weight: bold; letter-spacing: 0.5px; color: #fff; background: var(--rojo); border: 2px solid var(--rojo); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+    #btnRechazar:hover:not(:disabled) { background: #a52222; }
+    #btnRechazar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Checklist / aviso cuando la semana fue devuelta */
+    .checklist.devuelta { background: #fdf0e6; color: #8a4b1c; border: 1px solid #f0cda5; }
+    #avisoDev { max-width: 1100px; margin: 12px auto 0; padding: 13px 16px; border-radius: 10px; font-size: 14px; background: #fdf0e6; color: #8a4b1c; border: 1px solid #f0cda5; display: none; }
+
     .mensaje { max-width: 1100px; margin: 12px auto; padding: 13px 16px; border-radius: 10px; font-size: 14px; display: none; }
     .mensaje.exito { display: block; background: #e7f3ec; color: #14532d; border: 1px solid #b6dcc3; }
     .mensaje.error { display: block; background: #fdecec; color: #8a1c1c; border: 1px solid #f3c2c2; }
@@ -121,6 +132,7 @@
   </div>
 
   <div id="mensaje" class="mensaje"></div>
+  <div id="avisoDev"></div>
 
   <div class="panel" id="panel" style="display:none;">
     <div class="stats" id="stats"></div>
@@ -141,7 +153,10 @@
 
   <div class="barra-guardar">
     <div class="interno">
-      <button id="btnAprobar" disabled>Aprobar cierre</button>
+      <div class="botones-cierre">
+        <button id="btnAprobar" disabled>Aprobar cierre</button>
+        <button id="btnRechazar" disabled>Rechazar / Devolver a Alma</button>
+      </div>
     </div>
   </div>
 
@@ -170,6 +185,8 @@
     const inputSemana = document.getElementById("semana");
     const btnCargar = document.getElementById("btnCargar");
     const btnAprobar = document.getElementById("btnAprobar");
+    const btnRechazar = document.getElementById("btnRechazar");
+    const avisoDev = document.getElementById("avisoDev");
     const mensaje = document.getElementById("mensaje");
     const panel = document.getElementById("panel");
     const statsBox = document.getElementById("stats");
@@ -182,9 +199,12 @@
     let idSemana = "";
     let semanaCerrada = false;
     let infoCierre = null;     // {fecha_aprobada, aprobada_por}
+    let semanaDevuelta = false;
+    let infoDevolucion = null; // {motivo_devolucion, devuelta_por, fecha_devuelta}
     let puedeAprobar = false;
 
     function msg(texto, tipo) { mensaje.textContent = texto; mensaje.className = "mensaje " + tipo; }
+    function quienSoy() { try { const s = JSON.parse(localStorage.getItem("recouromex_sesion") || "null"); return (s && s.nombre) ? s.nombre : "Dirección"; } catch (e) { return "Dirección"; } }
     function fmt(n) { return Number(n).toLocaleString("es-MX", { maximumFractionDigits: 2 }); }
     function unidadCorta(u) { if (u === "KILOS") return "KG"; if (u === "PIEZAS") return "piezas"; return "LTS"; }
     function tieneTexto(v) { return v !== null && v !== undefined && String(v).trim() !== ""; }
@@ -213,6 +233,8 @@
           panel.style.display = "none";
           tablaWrap.style.display = "none";
           btnAprobar.disabled = true;
+          btnRechazar.disabled = true;
+          avisoDev.style.display = "none"; avisoDev.innerHTML = "";
           msg("No hay conciliación guardada para la semana " + idSemana + ". Alma debe guardar la conciliación primero.", "error");
           return;
         }
@@ -229,11 +251,14 @@
         filas.forEach(function (f) { f._nombre = mapaNombre[f.codigo_madre] || ""; });
 
         // ¿La semana ya esta cerrada? (tolerante a que la tabla "semanas" no exista aun)
-        semanaCerrada = false; infoCierre = null;
+        semanaCerrada = false; infoCierre = null; semanaDevuelta = false; infoDevolucion = null;
         try {
           const { data: sem, error: eSem } = await db.from("semanas")
-            .select("estado, aprobada_por, fecha_aprobada").eq("id_semana", idSemana).maybeSingle();
-          if (!eSem && sem && sem.estado === "CERRADA") { semanaCerrada = true; infoCierre = sem; }
+            .select("*").eq("id_semana", idSemana).maybeSingle();
+          if (!eSem && sem) {
+            if (sem.estado === "CERRADA") { semanaCerrada = true; infoCierre = sem; }
+            else if (sem.estado === "DEVUELTA") { semanaDevuelta = true; infoDevolucion = sem; }
+          }
         } catch (e) { /* la tabla semanas quizas no existe todavia */ }
 
         render();
@@ -245,6 +270,8 @@
         panel.style.display = "none";
         tablaWrap.style.display = "none";
         btnAprobar.disabled = true;
+        btnRechazar.disabled = true;
+        avisoDev.style.display = "none"; avisoDev.innerHTML = "";
         msg("Error al cargar: " + e.message, "error");
       } finally {
         btnCargar.disabled = false; btnCargar.textContent = "Cargar cierre";
@@ -330,6 +357,22 @@
       }
 
       btnAprobar.disabled = !puedeAprobar;
+
+      // Rechazar / Devolver: disponible si hay datos cargados y la semana NO esta cerrada
+      btnRechazar.disabled = !(filas.length > 0 && !semanaCerrada);
+
+      // Aviso si esta semana ya fue devuelta antes (esperando correccion de Alma)
+      if (semanaDevuelta && infoDevolucion && !semanaCerrada) {
+        avisoDev.style.display = "block";
+        avisoDev.innerHTML = "↩️ Ya devolviste esta semana a Alma el " +
+          fechaLegible(infoDevolucion.fecha_devuelta) +
+          (infoDevolucion.devuelta_por ? (" (" + infoDevolucion.devuelta_por + ")") : "") +
+          '.<br><b>Motivo:</b> ' + (infoDevolucion.motivo_devolucion || "(sin motivo)") +
+          "<br>Está esperando a que Alma corrija y vuelva a guardar la conciliación.";
+      } else {
+        avisoDev.style.display = "none";
+        avisoDev.innerHTML = "";
+      }
     }
 
     // ---------- Aprobar cierre ----------
@@ -409,8 +452,46 @@
       }
     }
 
+    // ---------- Rechazar / Devolver a Alma ----------
+    async function rechazar() {
+      if (filas.length === 0) { msg("Primero carga una semana.", "error"); return; }
+      if (semanaCerrada) { msg("Esta semana ya está cerrada; no se puede devolver.", "error"); return; }
+
+      const motivo = (window.prompt("Motivo de la devolución (Alma lo verá al abrir la semana):", "") || "").trim();
+      if (!motivo) { msg("Devolución cancelada: hace falta escribir un motivo.", "info"); return; }
+
+      btnRechazar.disabled = true; btnRechazar.textContent = "Devolviendo…";
+      try {
+        const ahora = new Date().toISOString();
+        const semReg = {
+          id_semana: idSemana,
+          estado: "DEVUELTA",
+          motivo_devolucion: motivo,
+          devuelta_por: quienSoy(),
+          fecha_devuelta: ahora
+        };
+        const { data: semEx, error: eSemSel } = await db.from("semanas").select("id_semana").eq("id_semana", idSemana);
+        if (eSemSel) throw eSemSel;
+        if (semEx && semEx.length > 0) {
+          const { error } = await db.from("semanas").update(semReg).eq("id_semana", idSemana);
+          if (error) throw error;
+        } else {
+          const { error } = await db.from("semanas").insert(semReg);
+          if (error) throw error;
+        }
+        semanaDevuelta = true; infoDevolucion = semReg;
+        evaluarChecklist();
+        msg("↩️ Semana devuelta a Alma con el motivo registrado. La verá al cargar la semana en su pantalla.", "exito");
+      } catch (e) {
+        msg("Error al devolver: " + e.message + "  (Si dice que falta una columna, primero corre el SQL \"agregar-devolucion-semanas.sql\" en Supabase.)", "error");
+      } finally {
+        btnRechazar.disabled = false; btnRechazar.textContent = "Rechazar / Devolver a Alma";
+      }
+    }
+
     btnCargar.addEventListener("click", cargar);
     btnAprobar.addEventListener("click", aprobar);
+    btnRechazar.addEventListener("click", rechazar);
     inputSemana.addEventListener("keydown", function (e) { if (e.key === "Enter") cargar(); });
   </script>
 </body>
